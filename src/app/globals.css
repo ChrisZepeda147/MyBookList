@@ -1,0 +1,629 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --accent: #fbbf24;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-nunito), var(--font-geist-sans), system-ui, sans-serif;
+  --font-reading: var(--font-reading-serif), Georgia, "Times New Roman", serif;
+}
+
+body {
+  background: #f8fafc;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  scrollbar-gutter: stable;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #fbbf24;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+@keyframes streak-star-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.55))
+      drop-shadow(0 0 14px rgba(168, 85, 247, 0.35));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.75))
+      drop-shadow(0 0 22px rgba(34, 211, 238, 0.55));
+    transform: scale(1.04);
+  }
+}
+
+.streak-star-epic {
+  animation: streak-star-pulse 2.5s ease-in-out infinite;
+}
+
+/* Days 5–9 — Ember (red to emerald) */
+.streak-ember-card {
+  background: linear-gradient(135deg, #dc2626 0%, #ca8a04 42%, #059669 100%);
+  color: #ffffff;
+}
+
+.streak-ember-card-muted {
+  background: linear-gradient(135deg, #fecaca 0%, #fef08a 45%, #d1fae5 100%);
+  color: #047857;
+}
+
+.streak-fire-ember {
+  animation: streak-fire-ember 2.8s ease-in-out infinite;
+}
+
+.streak-star-ember {
+  animation: streak-fire-ember 2.8s ease-in-out infinite;
+}
+
+@keyframes streak-fire-ember {
+  0%,
+  100% {
+    color: #ef4444;
+  }
+  50% {
+    color: #10b981;
+  }
+}
+
+/* Days 10–14 — Prism gradient tier */
+.streak-gradient-card {
+  background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+  color: #ffffff;
+}
+
+.streak-gradient-card-muted {
+  background: linear-gradient(135deg, #ede9fe 0%, #fce7f3 100%);
+  color: #7e22ce;
+}
+
+.streak-fire-gradient {
+  animation: streak-fire-gradient 3s ease-in-out infinite;
+}
+
+.streak-star-gradient {
+  animation: streak-fire-gradient 3s ease-in-out infinite;
+}
+
+@keyframes streak-fire-gradient {
+  0%,
+  100% {
+    color: #9333ea;
+  }
+  50% {
+    color: #ec4899;
+  }
+}
+
+.streak-rank-label-premium {
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Streak rank text color — dashboard header & profile name */
+.streak-reward-text--emerald {
+  color: #059669;
+}
+
+.streak-reward-text--ember {
+  background: linear-gradient(135deg, #dc2626, #059669);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.streak-reward-text--prism {
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.streak-reward-text--aurora {
+  background: linear-gradient(
+    90deg,
+    #ef4444,
+    #f59e0b,
+    #22c55e,
+    #3b82f6,
+    #a855f7,
+    #ef4444
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-aurora-shift 4s linear infinite;
+}
+
+.streak-reward-text--cosmic {
+  background: linear-gradient(135deg, #6366f1, #a855f7, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes streak-reward-aurora-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.streak-rank-label-ember {
+  background: linear-gradient(135deg, #dc2626, #059669);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.streak-rank-label-aurora {
+  background: linear-gradient(
+    90deg,
+    #ef4444,
+    #f59e0b,
+    #22c55e,
+    #3b82f6,
+    #a855f7,
+    #ef4444
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-aurora-shift 4s linear infinite;
+}
+
+.streak-count-text {
+  color: #f8fafc;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow:
+    0 0 14px rgba(255, 255, 255, 0.28),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* Days 15–20 — Aurora rainbow tier */
+.streak-aurora-card {
+  background: linear-gradient(
+    135deg,
+    #ef4444 0%,
+    #f59e0b 18%,
+    #22c55e 36%,
+    #3b82f6 54%,
+    #a855f7 72%,
+    #ec4899 90%,
+    #ef4444 100%
+  );
+  background-size: 250% 250%;
+  animation: streak-aurora-shift 5s ease infinite;
+  color: #ffffff;
+}
+
+.streak-aurora-card-muted {
+  background: linear-gradient(135deg, #fee2e2 0%, #fef9c3 25%, #d1fae5 50%, #dbeafe 75%, #f3e8ff 100%);
+  color: #6d28d9;
+}
+
+.streak-fire-aurora {
+  animation: streak-fire-aurora 4s ease-in-out infinite;
+}
+
+.streak-star-aurora {
+  animation: streak-fire-aurora 4s ease-in-out infinite;
+}
+
+@keyframes streak-aurora-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes streak-fire-aurora {
+  0%,
+  100% {
+    color: #ef4444;
+  }
+  20% {
+    color: #f59e0b;
+  }
+  40% {
+    color: #22c55e;
+  }
+  60% {
+    color: #3b82f6;
+  }
+  80% {
+    color: #a855f7;
+  }
+}
+
+/* Days 21+ — Legendary sparkle tier */
+.streak-legendary-card {
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #a855f7 25%,
+    #ec4899 50%,
+    #22d3ee 75%,
+    #a855f7 100%
+  );
+  background-size: 300% 300%;
+  animation: streak-legendary-shift 5s ease infinite;
+  color: #ffffff;
+}
+
+.streak-legendary-card-muted {
+  background: linear-gradient(135deg, #ede9fe 0%, #cffafe 50%, #fce7f3 100%);
+  color: #6d28d9;
+}
+
+.streak-legendary-sparkle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.45) 0%, transparent 42%),
+    radial-gradient(circle at 78% 62%, rgba(255, 255, 255, 0.35) 0%, transparent 38%),
+    radial-gradient(circle at 52% 12%, rgba(255, 255, 255, 0.2) 0%, transparent 30%);
+  animation: streak-sparkle 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.streak-fire-legendary {
+  animation: streak-fire-legendary 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.5));
+}
+
+.streak-star-legendary {
+  animation: streak-fire-legendary 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.45));
+}
+
+@keyframes streak-legendary-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes streak-sparkle {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2px);
+  }
+}
+
+@keyframes streak-fire-legendary {
+  0%,
+  100% {
+    color: #22d3ee;
+  }
+  25% {
+    color: #a855f7;
+  }
+  50% {
+    color: #ec4899;
+  }
+  75% {
+    color: #fbbf24;
+  }
+}
+
+/* ── Grid view (cover shelves) — do not change for spine work ── */
+
+.library-grid-bookshelf {
+  background-color: #1a0f0a;
+  background-image:
+    radial-gradient(
+      ellipse 90% 70% at 50% 35%,
+      rgba(55, 32, 20, 0.45) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      transparent 35%,
+      rgba(0, 0, 0, 0.55) 100%
+    ),
+    linear-gradient(180deg, #22140e 0%, #1a0f0a 50%, #120906 100%);
+  box-shadow:
+    inset 0 0 70px rgba(0, 0, 0, 0.5),
+    inset 0 0 120px rgba(0, 0, 0, 0.35);
+}
+
+.library-grid-shelf-plank {
+  height: 14px;
+  background-color: #3d2314;
+  background-image: linear-gradient(
+    180deg,
+    #4a2e1c 0%,
+    #3d2314 35%,
+    #2a1810 100%
+  );
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  box-shadow:
+    inset 0 4px 6px rgba(0, 0, 0, 0.6),
+    0 8px 12px rgba(0, 0, 0, 0.7);
+}
+
+.library-grid-shelf-row {
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.library-grid-shelf-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 14px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    transparent 35%
+  );
+  pointer-events: none;
+}
+
+/* ── Spine view — pure CSS 3D empty bookcase (no photo assets) ── */
+
+.library-spine-bookshelf {
+  background-color: #0a0604;
+}
+
+.library-spine-case {
+  background-color: #120a06;
+  box-shadow:
+    inset 0 20px 40px rgba(0, 0, 0, 0.9),
+    inset 0 0 80px rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(54, 29, 16, 0.55);
+}
+
+.library-spine-shelf-row {
+  position: relative;
+}
+
+.library-spine-shelf-row + .library-spine-shelf-row .library-spine-alcove {
+  box-shadow: inset 0 18px 28px rgba(0, 0, 0, 0.55);
+}
+
+.library-spine-alcove {
+  position: relative;
+  background-color: #120a06;
+  background-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    transparent 18%,
+    transparent 100%
+  );
+}
+
+.library-spine-shelf-plank {
+  position: relative;
+  z-index: 2;
+  height: 16px;
+  background-color: #361d10;
+  background-image: linear-gradient(
+    180deg,
+    #4a2818 0%,
+    #361d10 42%,
+    #2a160c 100%
+  );
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 4px solid #22120a;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.85);
+}
+
+.library-spine-base {
+  height: 20px;
+  background: linear-gradient(180deg, #2a160c 0%, #1a0e08 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.library-book-spine {
+  transform-origin: bottom center;
+  background-color: var(--spine-color, #4a3728);
+  background-image: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.38) 0%,
+    rgba(255, 255, 255, 0.04) 18%,
+    rgba(255, 255, 255, 0.04) 82%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  box-shadow:
+    3px 2px 7px rgba(0, 0, 0, 0.5),
+    1px 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.library-book-spine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.16) 49%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.16) 51%,
+    transparent 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.library-spine-title {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Photorealistic photo bookshelf (2.5D) */
+.photo-bookshelf-wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #ebe4d6;
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255, 253, 248, 0.5) 0%,
+      transparent 18%,
+      transparent 82%,
+      rgba(80, 70, 58, 0.05) 96%,
+      rgba(70, 62, 52, 0.1) 100%
+    ),
+    radial-gradient(
+      ellipse 120% 55% at 50% 8%,
+      rgba(255, 252, 245, 0.6) 0%,
+      transparent 62%
+    ),
+    url("/bookshelf/wall-texture.jpg");
+  background-size: 100% 100%, 100% 100%, 360px 360px;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+.photo-bookshelf-wall--left {
+  left: 0;
+  box-shadow: inset -22px 0 36px rgba(55, 48, 40, 0.1);
+}
+
+.photo-bookshelf-wall--right {
+  right: 0;
+  box-shadow: inset 22px 0 36px rgba(55, 48, 40, 0.1);
+}
+
+.photo-bookshelf-stage {
+  isolation: isolate;
+}
+
+.photo-bookshelf-bg {
+  user-select: none;
+  pointer-events: none;
+}
+
+.photo-bookshelf-vignette {
+  background: radial-gradient(
+    ellipse 85% 90% at 50% 45%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+}
+
+.photo-bookshelf-books {
+  pointer-events: none;
+}
+
+.photo-book-spine {
+  position: absolute;
+  padding: 0;
+  border: none;
+  background: transparent;
+  transform: rotate(var(--spine-tilt, 0deg));
+  transform-origin: bottom center;
+  cursor: grab;
+  pointer-events: auto;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.22s ease,
+    opacity 0.2s ease;
+  filter: drop-shadow(2px 4px 5px rgba(0, 0, 0, 0.55));
+}
+
+.photo-book-spine:hover {
+  transform: translateY(-5px) rotate(var(--spine-tilt, 0deg)) scale(1.02);
+  filter: drop-shadow(4px 8px 10px rgba(0, 0, 0, 0.7));
+  z-index: 120 !important;
+}
+
+.photo-book-spine:active {
+  cursor: grabbing;
+}
+
+.photo-book-spine--dragging {
+  opacity: 0.35;
+  transform: scale(0.96) rotate(var(--spine-tilt, 0deg));
+}
+
+.photo-book-spine--new {
+  animation: photoBookAppear 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes photoBookAppear {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotate(var(--spine-tilt, 0deg)) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--spine-tilt, 0deg)) scale(1);
+  }
+}
+
+.photo-book-spine-shade {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.photo-shelf-drop-zone {
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  box-shadow: inset 0 -2px 0 rgba(255, 200, 120, 0);
+}
+
+.photo-shelf-drop-zone--active {
+  opacity: 1;
+  box-shadow: inset 0 -3px 0 rgba(255, 200, 120, 0.55);
+  background: linear-gradient(
+    180deg,
+    transparent 60%,
+    rgba(255, 200, 120, 0.08) 100%
+  );
+}
+

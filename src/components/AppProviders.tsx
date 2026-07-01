@@ -1,0 +1,61 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { AccountLoadingSpinner } from "@/components/AccountLoadingSpinner";
+import { Navigation } from "@/components/Navigation";
+import { AuthProvider, useAuth } from "@/providers/AuthProvider";
+import { BookStoreProvider, useBookStore } from "@/providers/BookStoreProvider";
+import {
+  ReadingSessionLogProvider,
+  useReadingSessionLog,
+} from "@/providers/ReadingSessionLogProvider";
+import { StreakShieldPrompt } from "@/components/StreakShieldPrompt";
+
+function AppBootScreen() {
+  return <AccountLoadingSpinner label="Loading your account" />;
+}
+
+function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/login";
+  const { user, authReady } = useAuth();
+  const { loaded } = useBookStore();
+  const { hydrated: streakLogReady } = useReadingSessionLog();
+
+  if (isLoginPage) {
+    return (
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-0">
+        {children}
+      </main>
+    );
+  }
+
+  const waitingForAccount =
+    !authReady || (user != null && (!loaded || !streakLogReady));
+
+  if (waitingForAccount) {
+    return <AppBootScreen />;
+  }
+
+  return (
+    <>
+      <Navigation />
+      <StreakShieldPrompt />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-8">
+        {children}
+      </main>
+    </>
+  );
+}
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <BookStoreProvider>
+        <ReadingSessionLogProvider>
+          <AppShell>{children}</AppShell>
+        </ReadingSessionLogProvider>
+      </BookStoreProvider>
+    </AuthProvider>
+  );
+}

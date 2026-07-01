@@ -1,0 +1,217 @@
+"use client";
+
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import type { BookEntry } from "@/lib/types";
+import {
+  CUBBY_HEIGHT_PCT,
+  REFERENCE_BOOKSHELF,
+  SHELF_ROW_BANDS,
+} from "@/lib/photo-bookshelf/zones";
+import {
+  computePhotoBookshelfFit,
+  type PhotoBookshelfFitRect,
+} from "@/lib/photo-bookshelf/fit";
+import {
+  hitTestShelf,
+  spineStyleForPlacement,
+  type PlacedBook,
+  type ShelfLayoutState,
+} from "@/lib/photo-bookshelf/layout";
+import { BookSpineTile } from "@/components/photo-bookshelf/BookSpineTile";
+
+interface PhotoBookshelfStageProps {
+  books: BookEntry[];
+  layout: ShelfLayoutState;
+  onSelectBook: (book: BookEntry) => void;
+  onMoveBook: (bookId: string, row: number, xPct: number) => void;
+  newlyAddedId: string | null;
+  readOnly?: boolean;
+}
+
+export function PhotoBookshelfStage({
+  books,
+  layout,
+  onSelectBook,
+  onMoveBook,
+  newlyAddedId,
+  readOnly = false,
+}: PhotoBookshelfStageProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<PhotoBookshelfFitRect>({
+    leftPct: 0,
+    topPct: 0,
+    widthPct: 100,
+    heightPct: 100,
+  });
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetRow, setDropTargetRow] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setFit(computePhotoBookshelfFit(width, height));
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const bookById = useMemo(
+    () => new Map(books.map((b) => [b.id, b])),
+    [books],
+  );
+
+  const placements = useMemo(() => {
+    return layout.placed
+      .map((p) => {
+        const book = bookById.get(p.bookId);
+        if (!book) return null;
+        const style = spineStyleForPlacement(book, p);
+        if (!style) return null;
+        return { book, placement: p, style };
+      })
+      .filter(Boolean) as {
+      book: BookEntry;
+      placement: PlacedBook;
+      style: NonNullable<ReturnType<typeof spineStyleForPlacement>>;
+    }[];
+  }, [layout.placed, bookById]);
+
+  const pointerToPct = useCallback((clientX: number, clientY: number) => {
+    const el = stageRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return {
+      xPct: ((clientX - rect.left) / rect.width) * 100,
+      yPct: ((clientY - rect.top) / rect.height) * 100,
+    };
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const pt = pointerToPct(e.clientX, e.clientY);
+      if (!pt) return;
+      const hit = hitTestShelf(pt.xPct, pt.yPct);
+      setDropTargetRow(hit?.row ?? null);
+    },
+    [pointerToPct],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const bookId = e.dataTransfer.getData("text/book-id");
+      if (!bookId) return;
+      const pt = pointerToPct(e.clientX, e.clientY);
+      if (!pt) return;
+      const hit = hitTestShelf(pt.xPct, pt.yPct);
+      if (hit) onMoveBook(bookId, hit.row, hit.xPct);
+      setDraggingId(null);
+      setDropTargetRow(null);
+    },
+    [onMoveBook, pointerToPct],
+  );
+
+  const handleDragLeave = useCallback(() => {
+    setDropTargetRow(null);
+  }, []);
+
+  const gutterLeftPct = fit.leftPct;
+  const gutterRightPct = 100 - fit.leftPct - fit.widthPct;
+
+  return (
+    <div
+      ref={containerRef}
+      className="photo-bookshelf-frame relative h-full min-h-0 w-full overflow-hidden bg-white"
+      onDragOver={readOnly ? undefined : handleDragOver}
+      onDrop={readOnly ? undefined : handleDrop}
+      onDragLeave={readOnly ? undefined : handleDragLeave}
+    >
+      {gutterLeftPct > 0.25 && (
+        <div
+          className="photo-bookshelf-wall photo-bookshelf-wall--left"
+          style={{ width: `${gutterLeftPct}%` }}
+          aria-hidden
+        />
+      )}
+      {gutterRightPct > 0.25 && (
+        <div
+          className="photo-bookshelf-wall photo-bookshelf-wall--right"
+          style={{ width: `${gutterRightPct}%` }}
+          aria-hidden
+        />
+      )}
+
+      <div
+        ref={stageRef}
+        className="photo-bookshelf-stage absolute z-[1]"
+        style={{
+          left: `${fit.leftPct}%`,
+          top: `${fit.topPct}%`,
+          width: `${fit.widthPct}%`,
+          height: `${fit.heightPct}%`,
+        }}
+      >
+        <Image
+          src={REFERENCE_BOOKSHELF}
+          alt="Wooden bookshelf with vinyl records and turntable"
+          fill
+          priority
+          className="photo-bookshelf-bg object-cover object-center"
+          sizes="(max-width: 768px) 100vw, 720px"
+          draggable={false}
+        />
+
+        <div className="photo-bookshelf-vignette pointer-events-none absolute inset-0" aria-hidden />
+
+        {SHELF_ROW_BANDS.map((band) => {
+          const active = dropTargetRow === band.row;
+          return (
+            <div
+              key={band.row}
+              className={`photo-shelf-drop-zone pointer-events-none absolute ${active ? "photo-shelf-drop-zone--active" : ""}`}
+              style={{
+                left: `${band.minX}%`,
+                width: `${band.maxX - band.minX}%`,
+                bottom: `${100 - band.shelfLinePct}%`,
+                height: `${CUBBY_HEIGHT_PCT}%`,
+              }}
+              aria-hidden
+            />
+          );
+        })}
+
+        <div className="photo-bookshelf-books absolute inset-0">
+          {placements.map(({ book, style }) => (
+            <BookSpineTile
+              key={book.id}
+              book={book}
+              style={style}
+              isNew={newlyAddedId === book.id}
+              isDragging={draggingId === book.id}
+              readOnly={readOnly}
+              onSelect={() => onSelectBook(book)}
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/book-id", book.id);
+                e.dataTransfer.effectAllowed = "move";
+                setDraggingId(book.id);
+              }}
+              onDragEnd={() => {
+                setDraggingId(null);
+                setDropTargetRow(null);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
