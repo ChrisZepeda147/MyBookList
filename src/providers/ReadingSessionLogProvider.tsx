@@ -19,7 +19,7 @@ import { useAuth } from "@/providers/AuthProvider";
 
 interface ReadingSessionLogContextValue {
   sessions: ReadingSessionLogEntry[];
-  readingDays: string[];
+  readingDays: Set<string>;
   hydrated: boolean;
   reload: () => void;
 }

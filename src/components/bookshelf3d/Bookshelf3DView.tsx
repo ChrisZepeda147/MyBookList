@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import type { BookEntry } from "@/lib/types";
-import { useShelfLayout } from "@/hooks/useShelfLayout";
+import { useBookshelf3DLayout } from "@/hooks/useBookshelf3DLayout";
 import { BookshelfSidebar } from "@/components/bookshelf3d/BookshelfSidebar";
 import { BookshelfErrorBoundary } from "@/components/bookshelf3d/BookshelfErrorBoundary";
 
@@ -29,7 +29,7 @@ export function Bookshelf3DView({ books, onSelectBook }: Bookshelf3DViewProps) {
   const [search, setSearch] = useState("");
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const { layout, hydrated, placedIds, addBook, moveBook, removeFromShelf } =
-    useShelfLayout(books);
+    useBookshelf3DLayout(books);
 
   const handleSelectBook = useCallback(
     (book: BookEntry) => {
