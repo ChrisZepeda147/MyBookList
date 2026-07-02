@@ -25,6 +25,15 @@ body {
   scrollbar-gutter: stable;
 }
 
+.book-description-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
 .modal-panel {
   transform: scale(1.3);
   transform-origin: center center;
@@ -614,50 +623,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: pointer;
 }
 
-.photo-book-spine-handle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1px 2px;
-  border: none;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.5);
-  color: rgba(255, 255, 255, 0.9);
-  transform: translateX(-50%) translateY(-1px);
-  cursor: grab;
-  touch-action: none;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+.photo-book-spine--selected {
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.95))
+    drop-shadow(4px 8px 10px rgba(0, 0, 0, 0.7));
 }
 
-.photo-book-spine:hover .photo-book-spine-handle,
-.photo-book-spine-handle:focus-visible {
-  opacity: 1;
-}
-
-@media (max-width: 768px) {
-  .photo-book-spine-handle {
-    opacity: 1;
-  }
-}
-
-.photo-book-spine-handle:active {
-  cursor: grabbing;
+.photo-book-spine--selected .photo-book-spine-inner {
+  outline: 2px solid rgba(251, 191, 36, 0.95);
+  outline-offset: 1px;
 }
 
 .photo-book-spine:hover {
   transform: translateY(-5px) rotate(var(--spine-tilt, 0deg)) scale(1.02);
   filter: drop-shadow(4px 8px 10px rgba(0, 0, 0, 0.7));
   z-index: 120 !important;
-}
-
-.photo-book-spine--dragging {
-  opacity: 0.35;
-  transform: scale(0.96) rotate(var(--spine-tilt, 0deg));
 }
 
 .photo-book-spine--new {
@@ -691,6 +670,26 @@ input[type="range"]::-webkit-slider-thumb:hover {
   opacity: 0;
   transition: opacity 0.15s ease;
   box-shadow: inset 0 -2px 0 rgba(255, 200, 120, 0);
+}
+
+.photo-shelf-drop-zone--placement {
+  opacity: 1;
+  box-shadow: inset 0 -3px 0 rgba(255, 200, 120, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 200, 120, 0.04) 0%,
+    rgba(255, 200, 120, 0.12) 100%
+  );
+}
+
+.photo-shelf-drop-zone--placement:hover,
+.photo-shelf-drop-zone--placement:focus-visible {
+  box-shadow: inset 0 -3px 0 rgba(255, 200, 120, 0.75);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 200, 120, 0.08) 0%,
+    rgba(255, 200, 120, 0.2) 100%
+  );
 }
 
 .photo-shelf-drop-zone--active {

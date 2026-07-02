@@ -486,7 +486,7 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
                           </p>
                         )}
                         {book.description && (
-                          <p className="mt-1 line-clamp-2 text-xs text-slate-400">
+                          <p className="book-description-clamp mt-1 text-xs text-slate-400">
                             {book.description}
                           </p>
                         )}

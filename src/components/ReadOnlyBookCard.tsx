@@ -66,7 +66,7 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           <button
             type="button"
             onClick={() => onSelect(book)}
-            className="line-clamp-2 w-full min-w-0 text-left text-sm text-slate-500"
+            className="book-description-clamp w-full min-w-0 text-left text-sm text-slate-500"
           >
             {book.description}
           </button>

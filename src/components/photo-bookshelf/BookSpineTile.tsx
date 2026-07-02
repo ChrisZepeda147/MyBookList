@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
-import { GripVertical } from "lucide-react";
+import { useMemo } from "react";
 import type { BookEntry } from "@/lib/types";
 import { resolveCoverUrl } from "@/lib/cover-url";
 import { spineColorForBook } from "@/lib/library-spine";
@@ -11,44 +10,45 @@ interface BookSpineTileProps {
   book: BookEntry;
   style: SpinePlacementStyle;
   isNew?: boolean;
-  isDragging?: boolean;
+  isSelected?: boolean;
   readOnly?: boolean;
   onSelect: () => void;
-  onHandlePointerDown: (e: React.PointerEvent<HTMLButtonElement>) => void;
-  onHandlePointerMove: (e: React.PointerEvent<HTMLButtonElement>) => void;
-  onHandlePointerUp: (e: React.PointerEvent<HTMLButtonElement>) => void;
-  onHandlePointerCancel: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  onSelectForMove?: () => void;
 }
 
 export function BookSpineTile({
   book,
   style,
   isNew,
-  isDragging,
+  isSelected = false,
   readOnly = false,
   onSelect,
-  onHandlePointerDown,
-  onHandlePointerMove,
-  onHandlePointerUp,
-  onHandlePointerCancel,
+  onSelectForMove,
 }: BookSpineTileProps) {
   const spineColor = spineColorForBook(book.id);
   const coverUrl = resolveCoverUrl(book.coverUrl, "modal");
-  const draggedRef = useRef(false);
 
   const title = useMemo(() => {
     return book.title.length > 36 ? `${book.title.slice(0, 34)}…` : book.title;
   }, [book.title]);
 
+  const spineClass = [
+    "photo-book-spine group",
+    isNew ? "photo-book-spine--new" : "",
+    isSelected ? "photo-book-spine--selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
-      className={`photo-book-spine group ${isNew ? "photo-book-spine--new" : ""} ${isDragging ? "photo-book-spine--dragging" : ""}`}
+      className={spineClass}
       style={{
         left: `${style.leftPct}%`,
         bottom: `${style.bottomPct}%`,
         width: `${style.widthPct}%`,
         height: `${style.heightPct}%`,
-        zIndex: isDragging ? 200 : style.zIndex,
+        zIndex: isSelected ? 200 : style.zIndex,
         ["--spine-tilt" as string]: `${style.rotateDeg}deg`,
         ["--spine-color" as string]: spineColor,
       }}
@@ -57,14 +57,19 @@ export function BookSpineTile({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          if (draggedRef.current) {
-            draggedRef.current = false;
+          if (readOnly) {
+            onSelect();
             return;
           }
-          onSelect();
+          onSelectForMove?.();
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          if (!readOnly) onSelect();
         }}
         className="photo-book-spine-select block h-full w-full border-0 bg-transparent p-0"
         title={`${book.title} — ${book.author}`}
+        aria-pressed={!readOnly && isSelected ? true : undefined}
       >
         <div className="photo-book-spine-inner library-book-spine relative h-full w-full overflow-hidden rounded-t-[2px] border border-black/40">
           {coverUrl ? (
@@ -86,30 +91,6 @@ export function BookSpineTile({
           </span>
         </div>
       </button>
-
-      {!readOnly && (
-        <button
-          type="button"
-          className="photo-book-spine-handle"
-          aria-label={`Drag to rearrange ${book.title}`}
-          onPointerDown={(e) => {
-            draggedRef.current = false;
-            onHandlePointerDown(e);
-          }}
-          onPointerMove={(e) => {
-            draggedRef.current = true;
-            onHandlePointerMove(e);
-          }}
-          onPointerUp={(e) => {
-            onHandlePointerUp(e);
-          }}
-          onPointerCancel={(e) => {
-            onHandlePointerCancel(e);
-          }}
-        >
-          <GripVertical className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden />
-        </button>
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { BookEntry } from "@/lib/types";
 import {
@@ -45,8 +45,7 @@ export function PhotoBookshelfStage({
     widthPct: 100,
     heightPct: 100,
   });
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dropTargetRow, setDropTargetRow] = useState<number | null>(null);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -62,6 +61,17 @@ export function PhotoBookshelfStage({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!selectedBookId) return;
+
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelectedBookId(null);
+    }
+
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedBookId]);
 
   const bookById = useMemo(
     () => new Map(books.map((b) => [b.id, b])),
@@ -94,62 +104,25 @@ export function PhotoBookshelfStage({
     };
   }, []);
 
-  const updateDropTarget = useCallback(
-    (clientX: number, clientY: number) => {
-      const pt = pointerToPct(clientX, clientY);
+  const handleSelectForMove = useCallback((bookId: string) => {
+    setSelectedBookId((current) => (current === bookId ? null : bookId));
+  }, []);
+
+  const handleShelfPlace = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!selectedBookId) return;
+      e.stopPropagation();
+      const pt = pointerToPct(e.clientX, e.clientY);
       if (!pt) return;
       const hit = hitTestShelf(pt.xPct, pt.yPct);
-      setDropTargetRow(hit?.row ?? null);
+      if (!hit) return;
+      onMoveBook(selectedBookId, hit.row, hit.xPct);
+      setSelectedBookId(null);
     },
-    [pointerToPct],
+    [onMoveBook, pointerToPct, selectedBookId],
   );
 
-  const finishDrag = useCallback(
-    (bookId: string, clientX: number, clientY: number) => {
-      const pt = pointerToPct(clientX, clientY);
-      if (pt) {
-        const hit = hitTestShelf(pt.xPct, pt.yPct);
-        if (hit) onMoveBook(bookId, hit.row, hit.xPct);
-      }
-      setDraggingId(null);
-      setDropTargetRow(null);
-    },
-    [onMoveBook, pointerToPct],
-  );
-
-  const handleDragPointerDown = useCallback(
-    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
-      if (readOnly) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      setDraggingId(bookId);
-      updateDropTarget(e.clientX, e.clientY);
-    },
-    [readOnly, updateDropTarget],
-  );
-
-  const handleDragPointerMove = useCallback(
-    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
-      if (draggingId !== bookId) return;
-      e.preventDefault();
-      updateDropTarget(e.clientX, e.clientY);
-    },
-    [draggingId, updateDropTarget],
-  );
-
-  const handleDragPointerEnd = useCallback(
-    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
-      if (draggingId !== bookId) return;
-      e.preventDefault();
-      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      }
-      finishDrag(bookId, e.clientX, e.clientY);
-    },
-    [draggingId, finishDrag],
-  );
-
+  const placementMode = !readOnly && selectedBookId != null;
   const gutterLeftPct = fit.leftPct;
   const gutterRightPct = 100 - fit.leftPct - fit.widthPct;
 
@@ -195,22 +168,29 @@ export function PhotoBookshelfStage({
 
         <div className="photo-bookshelf-vignette pointer-events-none absolute inset-0" aria-hidden />
 
-        {SHELF_ROW_BANDS.map((band) => {
-          const active = dropTargetRow === band.row;
-          return (
-            <div
-              key={band.row}
-              className={`photo-shelf-drop-zone pointer-events-none absolute ${active ? "photo-shelf-drop-zone--active" : ""}`}
-              style={{
-                left: `${band.minX}%`,
-                width: `${band.maxX - band.minX}%`,
-                bottom: `${100 - band.shelfLinePct}%`,
-                height: `${CUBBY_HEIGHT_PCT}%`,
-              }}
-              aria-hidden
-            />
-          );
-        })}
+        {SHELF_ROW_BANDS.map((band) => (
+          <button
+            key={band.row}
+            type="button"
+            disabled={!placementMode}
+            onClick={handleShelfPlace}
+            className={`photo-shelf-drop-zone absolute border-0 bg-transparent p-0 ${
+              placementMode
+                ? "photo-shelf-drop-zone--placement pointer-events-auto cursor-pointer"
+                : "pointer-events-none"
+            }`}
+            style={{
+              left: `${band.minX}%`,
+              width: `${band.maxX - band.minX}%`,
+              bottom: `${100 - band.shelfLinePct}%`,
+              height: `${CUBBY_HEIGHT_PCT}%`,
+            }}
+            aria-label={
+              placementMode ? `Place book on shelf row ${band.row + 1}` : undefined
+            }
+            aria-hidden={!placementMode}
+          />
+        ))}
 
         <div className="photo-bookshelf-books absolute inset-0">
           {placements.map(({ book, style }) => (
@@ -219,13 +199,10 @@ export function PhotoBookshelfStage({
               book={book}
               style={style}
               isNew={newlyAddedId === book.id}
-              isDragging={draggingId === book.id}
+              isSelected={selectedBookId === book.id}
               readOnly={readOnly}
               onSelect={() => onSelectBook(book)}
-              onHandlePointerDown={(e) => handleDragPointerDown(book.id, e)}
-              onHandlePointerMove={(e) => handleDragPointerMove(book.id, e)}
-              onHandlePointerUp={(e) => handleDragPointerEnd(book.id, e)}
-              onHandlePointerCancel={(e) => handleDragPointerEnd(book.id, e)}
+              onSelectForMove={() => handleSelectForMove(book.id)}
             />
           ))}
         </div>
