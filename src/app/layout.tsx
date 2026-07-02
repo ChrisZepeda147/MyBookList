@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Nunito, Playfair_Display } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
@@ -31,6 +31,11 @@ export const metadata: Metadata = {
     "A clean, modern book tracking app. Search, rate, and organize your reading list.",
 };
 
+export const viewport: Viewport = {
+  width: 1200,
+  userScalable: true,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,6 +46,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} ${playfair.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="viewport" content="width=1200, user-scalable=yes" />
+      </head>
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
         <AppProviders>{children}</AppProviders>
       </body>
