@@ -203,7 +203,7 @@ export function BookPreviewModal({
         </div>
       }
     >
-      <div>
+      <div className="shrink-0">
         <h2
           id="book-preview-title"
           className="pr-8 text-xl font-bold leading-snug text-slate-900"
@@ -237,7 +237,7 @@ export function BookPreviewModal({
         isPlaceholder={isPlaceholderDescription(description)}
       />
 
-      <div className="grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2">
+      <div className="grid shrink-0 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-slate-500">
             Reading Status

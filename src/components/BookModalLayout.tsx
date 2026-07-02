@@ -8,7 +8,7 @@ import { resolveCoverUrl } from "@/lib/cover-url";
 
 /** Shared compact modal shell — matches the recommendations preview size. */
 export const BOOK_MODAL_PANEL_CLASS =
-  "modal-panel modal-panel--xl relative z-10 flex max-h-[min(90vh,40rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 sm:max-h-[min(88vh,36rem)]";
+  "relative z-10 flex max-h-[min(90vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200";
 
 interface BookModalLayoutProps {
   titleId: string;
@@ -70,7 +70,7 @@ export function BookModalLayout({
           <X className="h-5 w-5" />
         </button>
 
-        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
           <div className="relative mx-auto h-48 w-32 shrink-0 self-start bg-slate-100 sm:mx-0 sm:ml-5 sm:mt-5 sm:h-56 sm:w-36">
             {displayCover ? (
               <Image
@@ -88,8 +88,10 @@ export function BookModalLayout({
             )}
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-5 pt-4 sm:pl-4">
-            {children}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-5 pt-4 sm:pl-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+              {children}
+            </div>
           </div>
         </div>
 
@@ -114,10 +116,10 @@ export function BookModalAbout({
   isPlaceholder?: boolean;
 }) {
   return (
-    <div className="min-h-0">
+    <div className="shrink-0">
       <h3 className="mb-1.5 text-sm font-semibold text-slate-700">About</h3>
       <p
-        className={`max-h-32 overflow-y-auto text-sm leading-relaxed pr-1 ${
+        className={`max-h-36 overflow-y-auto text-sm leading-relaxed pr-1 ${
           isPlaceholder ? "italic text-slate-500" : "text-slate-600"
         }`}
       >

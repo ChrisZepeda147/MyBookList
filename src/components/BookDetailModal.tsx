@@ -272,7 +272,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
         </div>
       }
     >
-      <div>
+      <div className="shrink-0">
         <h2
           id="book-detail-title"
           className="pr-8 text-xl font-bold leading-snug text-slate-900"
@@ -293,7 +293,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <StatusBadge status={book.status} />
         {isReading && (
           <>
@@ -342,7 +342,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
         isPlaceholder={isPlaceholderDescription(description)}
       />
 
-      <div className="grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2">
+      <div className="grid shrink-0 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-slate-500">
             Reading Status
@@ -374,7 +374,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
         </div>
       </div>
 
-      <p className="inline-flex items-center gap-1 text-xs text-slate-400">
+      <p className="inline-flex shrink-0 items-center gap-1 text-xs text-slate-400">
         <Calendar className="h-3.5 w-3.5" />
         Added{" "}
         {new Date(book.addedAt).toLocaleDateString(undefined, {
