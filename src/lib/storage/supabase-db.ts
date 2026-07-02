@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BookEntry, ReadingSessionLogEntry, UserProfile } from "@/lib/types";
 import { DEFAULT_PROFILE } from "@/lib/types";
 import { resolveBookCategoryTags } from "@/lib/categories";
+import type { ShelfLayoutState } from "@/lib/photo-bookshelf/layout";
 import {
   bookEntryToInsert,
   bookRowToEntry,
@@ -78,6 +79,44 @@ export async function fetchBooks(
 
   if (error) throw error;
   return ((data ?? []) as BookRow[]).map(bookRowToEntry);
+}
+
+function parseShelfLayout(value: unknown): ShelfLayoutState | null {
+  if (!value || typeof value !== "object") return null;
+  const placed = (value as ShelfLayoutState).placed;
+  if (!Array.isArray(placed)) return null;
+  return { placed };
+}
+
+/** Fresh shelf layout from the database (used by the Shelf view on mount). */
+export async function fetchShelfLayout(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<ShelfLayoutState | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("shelf_layout")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return parseShelfLayout(data?.shelf_layout);
+}
+
+export async function saveShelfLayout(
+  supabase: SupabaseClient,
+  userId: string,
+  layout: ShelfLayoutState,
+): Promise<void> {
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      shelf_layout: layout,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) throw error;
 }
 
 export async function insertBook(

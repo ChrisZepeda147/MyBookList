@@ -94,10 +94,9 @@ export function PhotoBookshelfStage({
     };
   }, []);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const pt = pointerToPct(e.clientX, e.clientY);
+  const updateDropTarget = useCallback(
+    (clientX: number, clientY: number) => {
+      const pt = pointerToPct(clientX, clientY);
       if (!pt) return;
       const hit = hitTestShelf(pt.xPct, pt.yPct);
       setDropTargetRow(hit?.row ?? null);
@@ -105,24 +104,51 @@ export function PhotoBookshelfStage({
     [pointerToPct],
   );
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const bookId = e.dataTransfer.getData("text/book-id");
-      if (!bookId) return;
-      const pt = pointerToPct(e.clientX, e.clientY);
-      if (!pt) return;
-      const hit = hitTestShelf(pt.xPct, pt.yPct);
-      if (hit) onMoveBook(bookId, hit.row, hit.xPct);
+  const finishDrag = useCallback(
+    (bookId: string, clientX: number, clientY: number) => {
+      const pt = pointerToPct(clientX, clientY);
+      if (pt) {
+        const hit = hitTestShelf(pt.xPct, pt.yPct);
+        if (hit) onMoveBook(bookId, hit.row, hit.xPct);
+      }
       setDraggingId(null);
       setDropTargetRow(null);
     },
     [onMoveBook, pointerToPct],
   );
 
-  const handleDragLeave = useCallback(() => {
-    setDropTargetRow(null);
-  }, []);
+  const handleDragPointerDown = useCallback(
+    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
+      if (readOnly) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDraggingId(bookId);
+      updateDropTarget(e.clientX, e.clientY);
+    },
+    [readOnly, updateDropTarget],
+  );
+
+  const handleDragPointerMove = useCallback(
+    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
+      if (draggingId !== bookId) return;
+      e.preventDefault();
+      updateDropTarget(e.clientX, e.clientY);
+    },
+    [draggingId, updateDropTarget],
+  );
+
+  const handleDragPointerEnd = useCallback(
+    (bookId: string, e: React.PointerEvent<HTMLButtonElement>) => {
+      if (draggingId !== bookId) return;
+      e.preventDefault();
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+      finishDrag(bookId, e.clientX, e.clientY);
+    },
+    [draggingId, finishDrag],
+  );
 
   const gutterLeftPct = fit.leftPct;
   const gutterRightPct = 100 - fit.leftPct - fit.widthPct;
@@ -131,9 +157,6 @@ export function PhotoBookshelfStage({
     <div
       ref={containerRef}
       className="photo-bookshelf-frame relative h-full min-h-0 w-full overflow-hidden bg-white"
-      onDragOver={readOnly ? undefined : handleDragOver}
-      onDrop={readOnly ? undefined : handleDrop}
-      onDragLeave={readOnly ? undefined : handleDragLeave}
     >
       {gutterLeftPct > 0.25 && (
         <div
@@ -199,15 +222,10 @@ export function PhotoBookshelfStage({
               isDragging={draggingId === book.id}
               readOnly={readOnly}
               onSelect={() => onSelectBook(book)}
-              onDragStart={(e) => {
-                e.dataTransfer.setData("text/book-id", book.id);
-                e.dataTransfer.effectAllowed = "move";
-                setDraggingId(book.id);
-              }}
-              onDragEnd={() => {
-                setDraggingId(null);
-                setDropTargetRow(null);
-              }}
+              onHandlePointerDown={(e) => handleDragPointerDown(book.id, e)}
+              onHandlePointerMove={(e) => handleDragPointerMove(book.id, e)}
+              onHandlePointerUp={(e) => handleDragPointerEnd(book.id, e)}
+              onHandlePointerCancel={(e) => handleDragPointerEnd(book.id, e)}
             />
           ))}
         </div>

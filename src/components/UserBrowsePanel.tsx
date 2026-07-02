@@ -16,7 +16,11 @@ import { createClient } from "@/lib/supabase/client";
 import type { BookEntry } from "@/lib/types";
 import { useAuth } from "@/providers/AuthProvider";
 
-export function UserBrowsePanel() {
+interface UserBrowsePanelProps {
+  embedded?: boolean;
+}
+
+export function UserBrowsePanel({ embedded = false }: UserBrowsePanelProps) {
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<PublicProfileSummary[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
@@ -123,8 +127,16 @@ export function UserBrowsePanel() {
     ? publicProfileLabel(selectedProfile)
     : null;
 
+  const outerClass = embedded
+    ? "space-y-8 pt-4"
+    : "space-y-8 max-md:flex max-md:h-full max-md:flex-col max-md:gap-8 max-md:space-y-0";
+
+  const innerClass = embedded
+    ? "space-y-8"
+    : "space-y-8 max-md:flex max-md:flex-1 max-md:flex-col max-md:gap-8 max-md:space-y-0";
+
   return (
-    <div className="space-y-8 max-md:flex max-md:h-full max-md:flex-col max-md:gap-8 max-md:space-y-0">
+    <div className={outerClass}>
       {selectedProfile && viewingLabel ? (
         <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-blue-50 px-5 py-4 shadow-sm sm:px-6">
           <div className="flex items-start gap-4">
@@ -156,7 +168,7 @@ export function UserBrowsePanel() {
         />
       )}
 
-      <div className="space-y-8 max-md:flex max-md:flex-1 max-md:flex-col max-md:gap-8 max-md:space-y-0">
+      <div className={innerClass}>
       <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-600" />
@@ -238,7 +250,11 @@ export function UserBrowsePanel() {
       )}
 
       {selectedProfile && !booksError && (
-        <div className="max-md:flex max-md:flex-1 max-md:flex-col">
+        <div
+          className={
+            embedded ? undefined : "max-md:flex max-md:flex-1 max-md:flex-col"
+          }
+        >
           <PublicLibrarySection
             books={books}
             loaded={!booksLoading}

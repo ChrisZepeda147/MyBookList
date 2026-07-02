@@ -572,7 +572,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: transparent;
   transform: rotate(var(--spine-tilt, 0deg));
   transform-origin: bottom center;
-  cursor: grab;
   pointer-events: auto;
   transition:
     transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
@@ -581,14 +580,49 @@ input[type="range"]::-webkit-slider-thumb:hover {
   filter: drop-shadow(2px 4px 5px rgba(0, 0, 0, 0.55));
 }
 
+.photo-book-spine-select {
+  cursor: pointer;
+}
+
+.photo-book-spine-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 2px;
+  border: none;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateX(-50%) translateY(-1px);
+  cursor: grab;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.photo-book-spine:hover .photo-book-spine-handle,
+.photo-book-spine-handle:focus-visible {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .photo-book-spine-handle {
+    opacity: 1;
+  }
+}
+
+.photo-book-spine-handle:active {
+  cursor: grabbing;
+}
+
 .photo-book-spine:hover {
   transform: translateY(-5px) rotate(var(--spine-tilt, 0deg)) scale(1.02);
   filter: drop-shadow(4px 8px 10px rgba(0, 0, 0, 0.7));
   z-index: 120 !important;
-}
-
-.photo-book-spine:active {
-  cursor: grabbing;
 }
 
 .photo-book-spine--dragging {

@@ -1,5 +1,5 @@
-import { UserBrowsePanel } from "@/components/UserBrowsePanel";
+import { redirect } from "next/navigation";
 
 export default function BrowsePage() {
-  return <UserBrowsePanel />;
+  redirect("/add");
 }

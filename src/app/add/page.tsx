@@ -5,6 +5,7 @@ import type { BookPrefill, BookSearchResult } from "@/lib/types";
 import { BookSearch } from "@/components/BookSearch";
 import { ManualBookForm } from "@/components/ManualBookForm";
 import { RecommendedBooks } from "@/components/RecommendedBooks";
+import { UserBrowsePanel } from "@/components/UserBrowsePanel";
 import { BookPreviewModal } from "@/components/BookPreviewModal";
 import { Toast } from "@/components/Toast";
 import { SitePageHeader } from "@/components/SitePageHeader";
@@ -20,7 +21,7 @@ export default function AddBookPage() {
   }
 
   return (
-    <div className="space-y-8 max-md:flex max-md:h-full max-md:flex-col max-md:gap-8 max-md:space-y-0">
+    <div className="space-y-8">
       <SitePageHeader
         title="Add a Book"
         subtitle="Search the catalog, browse recommendations, or enter details manually."
@@ -52,7 +53,7 @@ export default function AddBookPage() {
       </div>
 
       {mode === "search" ? (
-        <div className="space-y-5 max-md:flex max-md:flex-1 max-md:flex-col">
+        <div className="space-y-5">
           <BookSearch
             onManualEntry={() => setMode("manual")}
             onSelect={setPreviewBook}
@@ -60,13 +61,15 @@ export default function AddBookPage() {
 
           <RecommendedBooks onSelect={setPreviewBook} />
 
+          <UserBrowsePanel embedded />
+
           <p className="text-center text-sm text-slate-400">
             Tap a search result or recommendation to preview it, then add to your
             list.
           </p>
         </div>
       ) : (
-        <div className="space-y-5 max-md:flex max-md:flex-1 max-md:flex-col">
+        <div className="space-y-5">
           {prefill && (
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
               Fields pre-filled from your selection — review and add below.
@@ -80,6 +83,7 @@ export default function AddBookPage() {
             />
           </div>
           <RecommendedBooks onSelect={setPreviewBook} />
+          <UserBrowsePanel embedded />
         </div>
       )}
 

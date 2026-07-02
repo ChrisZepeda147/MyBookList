@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookMarked, BookOpen, Plus, Search, User } from "lucide-react";
+import { BookMarked, BookOpen, Plus, User } from "lucide-react";
 
 const links = [
   { href: "/", label: "My List", icon: BookOpen },
   { href: "/reading", label: "Reading", icon: BookMarked },
-  { href: "/browse", label: "User Search", icon: Search },
   { href: "/add", label: "Add Book", icon: Plus },
   { href: "/profile", label: "Profile", icon: User },
 ];

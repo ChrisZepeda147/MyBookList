@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState, useLayoutEffect } from "react";
 import type { BookEntry } from "@/lib/types";
 import { useAuth } from "@/providers/AuthProvider";
-import { useShelfLayout } from "@/hooks/useShelfLayout";
+import { usePhotoBookshelfShelfLayout } from "@/hooks/usePhotoBookshelfShelfLayout";
 import { PhotoBookshelfStage } from "@/components/photo-bookshelf/PhotoBookshelfStage";
 import { photoBookshelfShellHeight } from "@/lib/photo-bookshelf/fit";
 
@@ -30,9 +30,13 @@ export function PhotoBookshelfView({
   const shellRef = useRef<HTMLDivElement>(null);
   const [shellHeight, setShellHeight] = useState(680);
   const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
-  const { layout, hydrated, moveBook } = useShelfLayout(books, shelfUserId, {
-    persist: !readOnly,
-  });
+  const { layout, hydrated, moveBook } = usePhotoBookshelfShelfLayout(
+    books,
+    shelfUserId,
+    {
+      persist: !readOnly,
+    },
+  );
 
   useLayoutEffect(() => {
     const el = shellRef.current;
@@ -96,7 +100,7 @@ export function PhotoBookshelfView({
       />
       {!readOnly && (
         <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[11px] text-amber-100/90 backdrop-blur-sm">
-          Click a book for details · Drag to rearrange
+          Click a book for details · Use grip to rearrange
         </p>
       )}
       {readOnly && (
