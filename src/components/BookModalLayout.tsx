@@ -6,9 +6,9 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { resolveCoverUrl } from "@/lib/cover-url";
 
-/** Shared compact modal shell — matches the recommendations preview size. */
+/** Shared book detail / preview modal shell (50% larger than compact baseline). */
 export const BOOK_MODAL_PANEL_CLASS =
-  "relative z-10 flex max-h-[min(90vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200";
+  "relative z-10 flex max-h-[min(92vh,78rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200";
 
 interface BookModalLayoutProps {
   titleId: string;
@@ -71,13 +71,13 @@ export function BookModalLayout({
         </button>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
-          <div className="relative mx-auto h-48 w-32 shrink-0 self-start bg-slate-100 sm:mx-0 sm:ml-5 sm:mt-5 sm:h-56 sm:w-36">
+          <div className="relative mx-auto h-72 w-48 shrink-0 self-start bg-slate-100 sm:mx-0 sm:ml-7 sm:mt-7 sm:h-[21rem] sm:w-[13.5rem]">
             {displayCover ? (
               <Image
                 src={displayCover}
                 alt={coverAlt}
                 fill
-                sizes="144px"
+                sizes="216px"
                 className="rounded-md object-cover object-center shadow-sm"
                 unoptimized
               />
@@ -88,15 +88,15 @@ export function BookModalLayout({
             )}
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-5 pt-4 sm:pl-4">
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-7 pt-5 sm:pl-5">
+            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1">
               {children}
             </div>
           </div>
         </div>
 
         {footer ? (
-          <div className="shrink-0 border-t border-slate-100 bg-white px-5 py-4">
+          <div className="shrink-0 border-t border-slate-100 bg-white px-7 py-5">
             {footer}
           </div>
         ) : null}
