@@ -379,7 +379,7 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
             }}
             onFocus={() => setOpen(true)}
             placeholder="Type here — let's find your book!"
-            className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            className="add-book-search-input w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
             aria-label="Search books"
             aria-expanded={showPanel}
             aria-haspopup="listbox"
@@ -392,7 +392,7 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
           type="button"
           onClick={() => runSearch(query)}
           disabled={!query.trim() || loading}
-          className="shrink-0 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+          className="add-book-search-btn shrink-0 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
         >
           Search
         </button>

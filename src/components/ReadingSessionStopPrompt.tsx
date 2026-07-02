@@ -66,7 +66,7 @@ export function ReadingSessionStopPrompt({
 
       <form
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-md rounded-2xl bg-[#161618] p-6 text-white shadow-2xl ring-1 ring-white/10"
+        className="mobile-modal-panel mobile-modal-panel--md relative z-10 w-full max-w-md rounded-2xl bg-[#161618] p-6 text-white shadow-2xl ring-1 ring-white/10"
       >
         <h2
           id="reading-session-stop-title"

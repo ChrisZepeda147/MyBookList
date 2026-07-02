@@ -26,14 +26,46 @@ body {
 }
 
 @media (max-width: 768px) {
-  .book-list-description {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    width: 100%;
-    min-width: 0;
-    word-break: break-word;
+  .mobile-modal-panel {
+    transform: scale(1.3);
+    transform-origin: center center;
+    width: calc(100% / 1.3);
+    max-width: calc(100% / 1.3);
+  }
+
+  .mobile-modal-panel--sm {
+    max-width: min(calc(100% / 1.3), calc(24rem / 1.3));
+  }
+
+  .mobile-modal-panel--md {
+    max-width: min(calc(100% / 1.3), calc(28rem / 1.3));
+  }
+
+  .mobile-modal-panel--xl {
+    max-width: min(calc(100% / 1.3), calc(36rem / 1.3));
+  }
+
+  .mobile-modal-panel--wide {
+    max-width: min(calc(100% / 1.3), calc(45rem / 1.3));
+  }
+
+  .reading-calendar-cell-height {
+    height: 2.925rem;
+  }
+
+  .add-book-search-input {
+    padding-top: 1.1375rem;
+    padding-bottom: 1.1375rem;
+  }
+
+  .add-book-search-btn {
+    padding-top: 1.1375rem;
+    padding-bottom: 1.1375rem;
+  }
+
+  .add-book-user-search-input {
+    padding-top: 0.8125rem;
+    padding-bottom: 0.8125rem;
   }
 }
 

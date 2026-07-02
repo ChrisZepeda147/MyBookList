@@ -67,7 +67,7 @@ export function UntimedReadingSessionPrompt({
 
       <form
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200"
+        className="mobile-modal-panel mobile-modal-panel--md relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200"
       >
         <h2
           id="untimed-reading-session-title"

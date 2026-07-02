@@ -38,7 +38,7 @@ export function StreakShieldPrompt() {
     >
       <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]" />
 
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-sky-200 bg-white p-6 shadow-xl">
+      <div className="mobile-modal-panel mobile-modal-panel--sm relative z-10 w-full max-w-sm rounded-2xl border border-sky-200 bg-white p-6 shadow-xl">
         <div className="flex flex-col items-center text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-50 text-2xl ring-4 ring-sky-100">
             {justActivated ? (
