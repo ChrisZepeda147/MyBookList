@@ -8,7 +8,7 @@ import { resolveCoverUrl } from "@/lib/cover-url";
 
 /** Shared compact modal shell — matches the recommendations preview size. */
 export const BOOK_MODAL_PANEL_CLASS =
-  "mobile-modal-panel mobile-modal-panel--xl relative z-10 flex max-h-[min(90vh,40rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 sm:max-h-[min(88vh,36rem)]";
+  "modal-panel modal-panel--xl relative z-10 flex max-h-[min(90vh,40rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 sm:max-h-[min(88vh,36rem)]";
 
 interface BookModalLayoutProps {
   titleId: string;

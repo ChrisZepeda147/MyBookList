@@ -1,6 +1,5 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import Image from "next/image";
 import type { BookEntry } from "@/lib/types";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
@@ -12,28 +11,12 @@ interface BookGridShelfViewProps {
   booksPerShelf?: number;
 }
 
-function subscribeMobileGrid(onStoreChange: () => void) {
-  const mq = window.matchMedia("(max-width: 768px)");
-  mq.addEventListener("change", onStoreChange);
-  return () => mq.removeEventListener("change", onStoreChange);
-}
-
-function getMobileGridSnapshot() {
-  return window.matchMedia("(max-width: 768px)").matches;
-}
-
-function getMobileGridServerSnapshot() {
-  return false;
-}
-
 function CoverOnShelf({
   book,
   onSelect,
-  mobileGrid,
 }: {
   book: BookEntry;
   onSelect: (book: BookEntry) => void;
-  mobileGrid: boolean;
 }) {
   if (!bookHasDisplayableCover(book, "list")) {
     return null;
@@ -43,11 +26,7 @@ function CoverOnShelf({
     <button
       type="button"
       onClick={() => onSelect(book)}
-      className={`group shrink-0 ${
-        mobileGrid
-          ? "w-full min-w-0"
-          : "w-[4.5rem] sm:w-[5.5rem] md:w-[6.25rem]"
-      }`}
+      className="group w-full min-w-0 shrink-0"
       title={book.title}
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-black/30 shadow-[0_8px_16px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_20px_rgba(0,0,0,0.55)]">
@@ -67,34 +46,21 @@ function CoverOnShelf({
 export function BookGridShelfView({
   books,
   onSelect,
-  booksPerShelf = 5,
+  booksPerShelf = 7,
 }: BookGridShelfViewProps) {
-  const mobileGrid = useSyncExternalStore(
-    subscribeMobileGrid,
-    getMobileGridSnapshot,
-    getMobileGridServerSnapshot,
-  );
-  const perShelf = mobileGrid ? 7 : booksPerShelf;
-  const shelves = chunkBooksForShelves(books, perShelf);
+  const shelves = chunkBooksForShelves(books, booksPerShelf);
 
   return (
     <div className="library-grid-bookshelf rounded-2xl px-4 py-8 sm:px-8 sm:py-10">
       <div className="space-y-10">
         {shelves.map((row, shelfIndex) => (
           <div key={shelfIndex} className="library-grid-shelf-row relative">
-            <div
-              className={`relative z-[1] items-end ${
-                mobileGrid
-                  ? "grid min-h-[9.5rem] grid-cols-7 gap-1"
-                  : "flex min-h-[11rem] justify-center gap-2 sm:min-h-[12.5rem] sm:gap-3"
-              }`}
-            >
+            <div className="relative z-[1] grid min-h-[9.5rem] grid-cols-7 items-end gap-1 sm:min-h-[11rem] sm:gap-2">
               {row.map((book) => (
                 <CoverOnShelf
                   key={book.id}
                   book={book}
                   onSelect={onSelect}
-                  mobileGrid={mobileGrid}
                 />
               ))}
             </div>

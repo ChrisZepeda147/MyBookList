@@ -108,7 +108,7 @@ export function MonthlyReadingCalendar() {
               return (
                 <div
                   key={`empty-${index}`}
-                  className="reading-calendar-cell-height h-9 sm:h-10"
+                  className="reading-calendar-cell-height"
                 />
               );
             }
@@ -118,7 +118,7 @@ export function MonthlyReadingCalendar() {
             return (
               <div
                 key={cell.dateKey}
-                className={`reading-calendar-cell-height flex h-9 items-center justify-center rounded-md text-[11px] font-semibold transition-colors sm:h-10 sm:text-xs ${
+                className={`reading-calendar-cell-height flex items-center justify-center rounded-md text-[11px] font-semibold transition-colors sm:text-xs ${
                   cell.isToday && isCurrentMonth
                     ? "ring-1 ring-blue-500 ring-offset-1"
                     : ""

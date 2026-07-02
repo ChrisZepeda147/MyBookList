@@ -99,7 +99,7 @@ export function SignOutConfirmModal({ onClose }: SignOutConfirmModalProps) {
       />
 
       <div
-        className={`mobile-modal-panel mobile-modal-panel--sm relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl shadow-blue-900/10 transition-all duration-200 ${
+        className={`modal-panel modal-panel--sm relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl shadow-blue-900/10 transition-all duration-200 ${
           showContent ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >

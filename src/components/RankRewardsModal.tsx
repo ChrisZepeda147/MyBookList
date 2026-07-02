@@ -58,7 +58,7 @@ export function RankRewardsModal({ onClose }: RankRewardsModalProps) {
       />
 
       <div
-        className={`mobile-modal-panel mobile-modal-panel--xl relative z-10 w-full max-w-[36rem] origin-center scale-[0.9] transition-all duration-200 sm:scale-100 ${
+        className={`modal-panel modal-panel--xl relative z-10 w-full max-w-[36rem] origin-center transition-all duration-200 ${
           showContent ? "translate-y-0" : "translate-y-2"
         }`}
       >
