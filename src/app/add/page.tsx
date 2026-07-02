@@ -20,7 +20,7 @@ export default function AddBookPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-md:flex max-md:h-full max-md:flex-col max-md:gap-8 max-md:space-y-0">
       <SitePageHeader
         title="Add a Book"
         subtitle="Search the catalog, browse recommendations, or enter details manually."
@@ -52,7 +52,7 @@ export default function AddBookPage() {
       </div>
 
       {mode === "search" ? (
-        <div className="space-y-5">
+        <div className="space-y-5 max-md:flex max-md:flex-1 max-md:flex-col">
           <BookSearch
             onManualEntry={() => setMode("manual")}
             onSelect={setPreviewBook}
@@ -66,7 +66,7 @@ export default function AddBookPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-5 max-md:flex max-md:flex-1 max-md:flex-col">
           {prefill && (
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
               Fields pre-filled from your selection — review and add below.

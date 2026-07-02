@@ -1,6 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BookEntry, ReadingStatus, SortOption } from "@/lib/types";
+import { SORT_OPTIONS } from "@/lib/types";
 import { useBookStore } from "@/providers/BookStoreProvider";
+
+const SORT_PREFERENCE_KEY = "sortPreference";
+
+function isSortOption(value: string): value is SortOption {
+  return SORT_OPTIONS.some((option) => option.value === value);
+}
 
 interface UseFilteredBooksOptions {
   fixedStatus?: ReadingStatus;
@@ -19,7 +26,19 @@ export function useFilteredBooks({
   const [statusFilter, setStatusFilter] = useState<ReadingStatus | "all">(
     fixedStatus ?? "all",
   );
-  const [sortBy, setSortBy] = useState<SortOption>("default");
+  const [sortBy, setSortByState] = useState<SortOption>("default");
+
+  useEffect(() => {
+    const stored = localStorage.getItem(SORT_PREFERENCE_KEY);
+    if (stored && isSortOption(stored)) {
+      setSortByState(stored);
+    }
+  }, []);
+
+  const setSortBy = useCallback((value: SortOption) => {
+    setSortByState(value);
+    localStorage.setItem(SORT_PREFERENCE_KEY, value);
+  }, []);
 
   const filtered = useMemo(() => {
     let result = [...books];

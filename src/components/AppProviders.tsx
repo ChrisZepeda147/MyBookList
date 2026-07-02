@@ -22,6 +22,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { loaded } = useBookStore();
   const { hydrated: streakLogReady } = useReadingSessionLog();
 
+  const fillMobileViewport =
+    pathname === "/add" || pathname === "/browse";
+
   if (isLoginPage) {
     return (
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-0">
@@ -41,7 +44,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <>
       <Navigation />
       <StreakShieldPrompt />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-8">
+      <main
+        className={`mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 ${
+          fillMobileViewport ? "max-md:flex max-md:min-h-0 max-md:flex-col" : ""
+        }`}
+      >
         {children}
       </main>
     </>

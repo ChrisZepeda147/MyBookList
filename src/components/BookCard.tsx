@@ -84,7 +84,7 @@ export function BookCard({ book, onSelect }: BookCardProps) {
           <button
             type="button"
             onClick={() => onSelect(book)}
-            className="line-clamp-2 text-left text-sm text-slate-500"
+            className="book-list-description text-left text-sm text-slate-500"
           >
             {book.description}
           </button>
