@@ -124,7 +124,7 @@ export function UserBrowsePanel() {
     : null;
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 max-w-full space-y-8">
       {selectedProfile && viewingLabel ? (
         <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-blue-50 px-5 py-4 shadow-sm sm:px-6">
           <div className="flex items-start gap-4">
@@ -156,7 +156,7 @@ export function UserBrowsePanel() {
         />
       )}
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+      <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-slate-900">Find a reader</h2>

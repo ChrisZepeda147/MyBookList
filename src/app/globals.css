@@ -23,6 +23,15 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   scrollbar-gutter: stable;
+  max-width: 100%;
+}
+
+.book-list-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 input[type="range"]::-webkit-slider-thumb {

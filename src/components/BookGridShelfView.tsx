@@ -51,11 +51,11 @@ export function BookGridShelfView({
   const shelves = chunkBooksForShelves(books, booksPerShelf);
 
   return (
-    <div className="library-grid-bookshelf rounded-2xl px-4 py-8 sm:px-8 sm:py-10">
+    <div className="library-grid-bookshelf w-full max-w-full overflow-hidden rounded-2xl px-4 py-8 sm:px-8 sm:py-10">
       <div className="space-y-10">
         {shelves.map((row, shelfIndex) => (
           <div key={shelfIndex} className="library-grid-shelf-row relative">
-            <div className="relative z-[1] flex min-h-[11rem] items-end justify-center gap-2 sm:min-h-[12.5rem] sm:gap-3">
+            <div className="relative z-[1] flex min-h-[11rem] min-w-0 items-end justify-start gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:min-h-[12.5rem] sm:gap-3">
               {row.map((book) => (
                 <CoverOnShelf
                   key={book.id}

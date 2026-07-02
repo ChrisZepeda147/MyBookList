@@ -66,12 +66,12 @@ export function StreakDayCards({ streak }: StreakDayCardsProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
         <button
           type="button"
           onClick={goToPreviousPage}
           disabled={windowStart === 0}
-          className="shrink-0 rounded-md p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent"
+          className="sticky left-0 z-10 shrink-0 rounded-md bg-slate-900 p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent"
           aria-label="View previous 7-day block"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -92,7 +92,7 @@ export function StreakDayCards({ streak }: StreakDayCardsProps) {
         <button
           type="button"
           onClick={goToNextPage}
-          className="shrink-0 rounded-md p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-slate-200"
+          className="sticky right-0 z-10 shrink-0 rounded-md bg-slate-900 p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-slate-200"
           aria-label="View next 7-day block"
         >
           <ChevronRight className="h-4 w-4" />

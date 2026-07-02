@@ -19,7 +19,7 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
   }
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:flex-row">
+    <article className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:flex-row">
       <button
         type="button"
         onClick={() => onSelect(book)}
@@ -34,11 +34,11 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
         />
       </button>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         <button
           type="button"
           onClick={() => onSelect(book)}
-          className="text-left"
+          className="min-w-0 text-left"
         >
           <h3 className="font-semibold text-slate-900 transition-colors group-hover:text-blue-600">
             {book.title}
@@ -66,7 +66,7 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           <button
             type="button"
             onClick={() => onSelect(book)}
-            className="line-clamp-2 text-left text-sm text-slate-500"
+            className="book-list-description line-clamp-2 block w-full min-w-0 overflow-hidden text-left text-sm text-slate-500"
           >
             {book.description}
           </button>
@@ -79,7 +79,7 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           </div>
 
           {book.rating !== null && (
-            <div className="min-w-[140px] flex-1">
+            <div className="min-w-0 flex-1">
               <span className="mb-1 block text-xs font-medium text-slate-400">
                 Rating
               </span>

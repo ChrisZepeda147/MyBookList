@@ -17,7 +17,7 @@ export function Navigation() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 pb-5 pt-6 sm:px-6">
+      <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-2 px-4 pb-5 pt-6 sm:px-6">
         <Link
           href="/"
           className="flex items-center gap-2 text-xl font-bold text-blue-600 transition-colors hover:text-blue-700"
@@ -26,7 +26,7 @@ export function Navigation() {
           <span>MyBookList</span>
         </Link>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto sm:gap-2">
           {links.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
