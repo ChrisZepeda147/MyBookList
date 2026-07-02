@@ -6,9 +6,9 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { resolveCoverUrl } from "@/lib/cover-url";
 
-/** Shared book detail / preview modal shell (50% larger than compact baseline). */
+/** Shared book detail / preview modal shell. */
 export const BOOK_MODAL_PANEL_CLASS =
-  "relative z-10 flex max-h-[min(92vh,78rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200";
+  "relative z-10 flex min-h-[min(70vh,60rem)] max-h-[min(96vh,117rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200";
 
 interface BookModalLayoutProps {
   titleId: string;
@@ -71,7 +71,7 @@ export function BookModalLayout({
         </button>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
-          <div className="relative mx-auto h-72 w-48 shrink-0 self-start bg-slate-100 sm:mx-0 sm:ml-7 sm:mt-7 sm:h-[21rem] sm:w-[13.5rem]">
+          <div className="relative mx-auto h-[27rem] w-48 shrink-0 self-start bg-slate-100 sm:mx-0 sm:ml-7 sm:mt-7 sm:h-[31.5rem] sm:w-[13.5rem]">
             {displayCover ? (
               <Image
                 src={displayCover}
