@@ -34,7 +34,7 @@ export function MonthlyReadingCalendar() {
   );
 
   const daysReadThisMonth = useMemo(
-    () => countReadingDaysInMonth(readingDays, view.year, view.month),
+    () => countReadingDaysInMonth(new Set(readingDays), view.year, view.month),
     [readingDays, view.year, view.month],
   );
 
