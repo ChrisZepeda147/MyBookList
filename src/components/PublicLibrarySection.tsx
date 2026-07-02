@@ -66,7 +66,7 @@ export function PublicLibrarySection({
   ];
 
   return (
-    <section className="min-w-0 max-w-full space-y-5 overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+    <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Library</h2>

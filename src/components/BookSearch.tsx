@@ -349,9 +349,9 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
   return (
     <div
       ref={containerRef}
-      className={`relative z-10 w-full min-w-0 max-w-full ${showPanel ? "z-50" : "z-0"}`}
+      className={`relative w-full ${showPanel ? "z-50" : "z-0"}`}
     >
-      <div className="flex min-w-0 gap-2">
+      <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input

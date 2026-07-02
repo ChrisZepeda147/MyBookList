@@ -8,7 +8,7 @@ export function ReadingStreakBanner() {
   const { streak } = useReadingStreak();
 
   return (
-    <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-sm">
       <div className="flex items-center gap-2.5 border-b border-slate-700/60 px-5 py-4 sm:px-6">
         <StreakFireIcon streak={streak} />
         <h2 className="font-reading text-2xl font-semibold tracking-tight text-white sm:text-[1.65rem]">

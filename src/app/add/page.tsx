@@ -20,13 +20,13 @@ export default function AddBookPage() {
   }
 
   return (
-    <div className="min-w-0 max-w-full space-y-8">
+    <div className="space-y-8">
       <SitePageHeader
         title="Add a Book"
         subtitle="Search the catalog, browse recommendations, or enter details manually."
       />
 
-      <div className="min-w-0 max-w-full flex rounded-xl bg-slate-100 p-1">
+      <div className="flex rounded-xl bg-slate-100 p-1">
         <button
           type="button"
           onClick={() => setMode("search")}

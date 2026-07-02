@@ -395,7 +395,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
   }
 
   return (
-    <section className="relative z-0 min-w-0 max-w-full space-y-3">
+    <section className="relative z-0 space-y-3">
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-amber-500" />
         <div>
@@ -433,7 +433,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
           No recommendations available right now.
         </div>
       ) : (
-        <div className="flex min-w-0 items-stretch gap-2">
+        <div className="flex items-stretch gap-2">
           <button
             type="button"
             onClick={() => scrollRecommendations(-1)}
@@ -461,7 +461,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
               return (
                 <div
                   key={book.id || normalizeTitle(book.title)}
-                  className="group relative w-28 min-w-[6.5rem] max-w-[8.75rem] shrink-0"
+                  className="group relative w-[calc((100%-3rem)/5)] min-w-[6.5rem] max-w-[8.75rem] shrink-0 sm:w-[calc((100%-3.75rem)/6)] md:w-[calc((100%-4.5rem)/7)] lg:w-[calc((100%-5.25rem)/8)]"
                 >
                 <button
                   type="button"
@@ -525,7 +525,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
           })}
 
           {fetchingReplacement && (
-            <div className="flex aspect-[2/3] w-28 min-w-[6.5rem] max-w-[8.75rem] shrink-0 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50">
+            <div className="flex aspect-[2/3] w-[calc((100%-3rem)/5)] min-w-[6.5rem] max-w-[8.75rem] shrink-0 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 sm:w-[calc((100%-3.75rem)/6)] md:w-[calc((100%-4.5rem)/7)] lg:w-[calc((100%-5.25rem)/8)]">
               <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
             </div>
           )}

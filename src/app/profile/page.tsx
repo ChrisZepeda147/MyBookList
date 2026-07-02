@@ -8,7 +8,7 @@ import { SitePageHeader } from "@/components/SitePageHeader";
 
 export default function ProfilePage() {
   return (
-    <div className="min-w-0 space-y-8">
+    <div className="space-y-8">
       <SitePageHeader
         title="Profile"
         subtitle="Your goals, progress, and reading stats in one place."

@@ -140,7 +140,7 @@ export function StreakStyleCard({
   if (headerVariant) {
     return (
       <div
-        className={`flex min-w-0 flex-1 flex-col items-center justify-between rounded-xl px-1 py-2 min-h-[3.75rem] ${headerBoxClasses(state)}`}
+        className={`flex flex-1 flex-col items-center justify-between rounded-xl px-1 py-2 min-h-[3.75rem] ${headerBoxClasses(state)}`}
       >
         {state === "future" ? (
           <div className={`rounded-full border-2 border-slate-500 ${starClass}`} />
@@ -165,7 +165,7 @@ export function StreakStyleCard({
   if (state === "future") {
     return (
       <div
-        className={`flex min-w-0 flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)} border border-slate-200 bg-white text-slate-400`}
+        className={`flex flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)} border border-slate-200 bg-white text-slate-400`}
       >
         <div className="h-3.5 w-3.5 rounded-full border border-slate-300" />
         <span
@@ -185,7 +185,7 @@ export function StreakStyleCard({
   if (iconsOnly) {
     return (
       <div
-        className={`flex min-w-0 flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)} ${neutralBoxClasses(state)}`}
+        className={`flex flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)} ${neutralBoxClasses(state)}`}
       >
         <StreakStyleStar
           dayIndex={dayIndex}
@@ -209,7 +209,7 @@ export function StreakStyleCard({
     const cardClass = isMuted ? style.cardMutedClass : style.cardClass;
     return (
       <div
-        className={`relative flex min-w-0 flex-1 flex-col items-center justify-between overflow-hidden ${cardClass ?? ""} ${cardSizeClasses(compact, state)} ${style.kind === "legendary" && !isMuted ? "streak-legendary-sparkle" : ""}`}
+        className={`relative flex flex-1 flex-col items-center justify-between overflow-hidden ${cardClass ?? ""} ${cardSizeClasses(compact, state)} ${style.kind === "legendary" && !isMuted ? "streak-legendary-sparkle" : ""}`}
       >
         <StreakStyleStar
           dayIndex={dayIndex}
@@ -233,7 +233,7 @@ export function StreakStyleCard({
 
   return (
     <div
-      className={`flex min-w-0 flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)}`}
+      className={`flex flex-1 flex-col items-center justify-between ${cardSizeClasses(compact, state)}`}
       style={{ backgroundColor: bg, color }}
     >
       <Star

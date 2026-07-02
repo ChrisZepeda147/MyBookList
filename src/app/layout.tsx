@@ -32,8 +32,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
+  width: 1200,
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -44,9 +44,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} ${playfair.variable} min-h-screen antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="flex min-h-screen min-w-0 flex-col bg-slate-50 text-slate-900">
+      <head>
+        <meta name="viewport" content="width=1200, user-scalable=yes" />
+      </head>
+      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

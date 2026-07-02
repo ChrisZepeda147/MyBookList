@@ -48,8 +48,8 @@ export function MonthlyReadingCalendar() {
   }
 
   return (
-    <section className="w-full max-w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-      <div className="mx-auto w-full max-w-full">
+    <section className="w-full rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mx-auto w-[75%] min-w-[75%] max-w-full">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
