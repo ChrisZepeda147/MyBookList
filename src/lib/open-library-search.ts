@@ -65,7 +65,7 @@ export async function searchOpenLibraryBooks(
   if (!trimmed) return [];
 
   const params = new URLSearchParams({
-    q: trimmed,
+    q: `language:eng ${trimmed}`,
     limit: "25",
     fields:
       "key,title,author_name,cover_i,first_sentence,number_of_pages_median",

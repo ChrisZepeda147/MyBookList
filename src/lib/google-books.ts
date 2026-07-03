@@ -147,6 +147,7 @@ export async function searchGoogleBooks(
     maxResults: "25",
     orderBy: "relevance",
     projection: "full",
+    langRestrict: "en",
   });
 
   const url = `https://www.googleapis.com/books/v1/volumes?${params.toString()}`;

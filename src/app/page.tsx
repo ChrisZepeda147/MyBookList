@@ -1,6 +1,7 @@
 "use client";
 
 import { LibrarySection } from "@/components/LibrarySection";
+import { StartReadingShortcut } from "@/components/StartReadingShortcut";
 import { SitePageHeader } from "@/components/SitePageHeader";
 import { useReadingStreak } from "@/hooks/useReadingStreak";
 import {
@@ -21,6 +22,7 @@ export default function HomePage() {
         subtitle="Track, rate, and organize your reading journey."
         titleRewardClassName={titleRewardClass}
       />
+      <StartReadingShortcut />
       <LibrarySection />
     </div>
   );

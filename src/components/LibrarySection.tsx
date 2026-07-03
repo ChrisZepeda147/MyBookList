@@ -106,11 +106,20 @@ export function LibrarySection() {
       ) : viewMode === "list" ? (
         <div className="grid gap-4">
           {filtered.map((book) => (
-            <BookCard key={book.id} book={book} onSelect={setSelectedBook} />
+            <BookCard
+              key={book.id}
+              book={book}
+              onSelect={setSelectedBook}
+              clampDescription
+            />
           ))}
         </div>
       ) : viewMode === "grid" ? (
-        <BookGridShelfView books={filtered} onSelect={setSelectedBook} />
+        <BookGridShelfView
+          books={filtered}
+          onSelect={setSelectedBook}
+          showDescriptions
+        />
       ) : (
         <PhotoBookshelfView books={books} onSelectBook={setSelectedBook} />
       )}

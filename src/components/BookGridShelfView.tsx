@@ -3,42 +3,65 @@
 import Image from "next/image";
 import type { BookEntry } from "@/lib/types";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
+import { ensureBookDescription } from "@/lib/book-descriptions";
 import { chunkBooksForShelves } from "@/lib/library-shelves";
 
 interface BookGridShelfViewProps {
   books: BookEntry[];
   onSelect: (book: BookEntry) => void;
   booksPerShelf?: number;
+  /** Show clamped description text under covers (MyList grid view). */
+  showDescriptions?: boolean;
 }
 
 function CoverOnShelf({
   book,
   onSelect,
+  showDescriptions,
 }: {
   book: BookEntry;
   onSelect: (book: BookEntry) => void;
+  showDescriptions: boolean;
 }) {
   if (!bookHasDisplayableCover(book, "list")) {
     return null;
   }
 
+  const description = ensureBookDescription(book.description);
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(book)}
-      className="group w-full min-w-0 shrink-0"
-      title={book.title}
-    >
-      <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-black/30 shadow-[0_8px_16px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_20px_rgba(0,0,0,0.55)]">
-        <Image
-          src={book.coverUrl!}
-          alt={book.title}
-          fill
-          className="object-cover"
-          unoptimized
-        />
-      </div>
-    </button>
+    <div className="group w-full min-w-0 shrink-0">
+      <button
+        type="button"
+        onClick={() => onSelect(book)}
+        className="block w-full"
+        title={book.title}
+      >
+        <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-black/30 shadow-[0_8px_16px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_20px_rgba(0,0,0,0.55)]">
+          <Image
+            src={book.coverUrl!}
+            alt={book.title}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      </button>
+      {showDescriptions && (
+        <button
+          type="button"
+          onClick={() => onSelect(book)}
+          className="mt-1.5 w-full text-left"
+        >
+          <p className="line-clamp-1 text-[10px] font-medium text-slate-800 sm:text-xs">
+            {book.title}
+          </p>
+          <p className="book-description-clamp mt-0.5 text-[9px] leading-snug text-slate-500 sm:text-[10px]">
+            {description}
+          </p>
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -47,6 +70,7 @@ export function BookGridShelfView({
   books,
   onSelect,
   booksPerShelf = 7,
+  showDescriptions = false,
 }: BookGridShelfViewProps) {
   const shelves = chunkBooksForShelves(books, booksPerShelf);
 
@@ -61,6 +85,7 @@ export function BookGridShelfView({
                   key={book.id}
                   book={book}
                   onSelect={onSelect}
+                  showDescriptions={showDescriptions}
                 />
               ))}
             </div>

@@ -1,7 +1,7 @@
 import type { GoogleVolume } from "@/lib/google-books-client";
 
 export const MISSING_DESCRIPTION_FALLBACK =
-  "No description available for this edition. Add your own notes or summary in the edit panel!";
+  "No description available for this title.";
 
 export function cleanDescription(
   raw: string | null | undefined,

@@ -9,15 +9,23 @@ import { StarRating } from "@/components/StarRating";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadges } from "@/components/CategoryBadges";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
+import { ensureBookDescription } from "@/lib/book-descriptions";
 
 interface BookCardProps {
   book: BookEntry;
   onSelect: (book: BookEntry) => void;
+  /** When true, description is capped at 2 lines (MyList library list view). */
+  clampDescription?: boolean;
 }
 
-export function BookCard({ book, onSelect }: BookCardProps) {
+export function BookCard({
+  book,
+  onSelect,
+  clampDescription = false,
+}: BookCardProps) {
   const { setBookStatus, setBookRating, removeBook } = useBookStore();
   const canRate = book.status === "completed";
+  const displayDescription = ensureBookDescription(book.description);
 
   if (!bookHasDisplayableCover(book, "list")) {
     return null;
@@ -80,15 +88,15 @@ export function BookCard({ book, onSelect }: BookCardProps) {
           </button>
         </div>
 
-        {book.description && (
-          <button
-            type="button"
-            onClick={() => onSelect(book)}
-            className="book-description-clamp w-full min-w-0 text-left text-sm text-slate-500"
-          >
-            {book.description}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => onSelect(book)}
+          className={`w-full min-w-0 text-left text-sm text-slate-500 ${
+            clampDescription ? "book-description-clamp" : ""
+          }`}
+        >
+          {displayDescription}
+        </button>
 
         <div
           className="mt-auto flex flex-wrap items-end gap-4"

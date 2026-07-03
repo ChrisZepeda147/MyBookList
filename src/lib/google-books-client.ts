@@ -29,6 +29,7 @@ export interface GoogleVolume {
     pageCount?: number;
     publishedDate?: string;
     categories?: string[];
+    language?: string;
     imageLinks?: {
       thumbnail?: string;
       smallThumbnail?: string;
@@ -67,6 +68,25 @@ export function titlesMatch(a: string, b: string): boolean {
   const shorter = na.length < nb.length ? na : nb;
   const longer = na.length < nb.length ? nb : na;
   return longer.includes(shorter.slice(0, Math.max(8, shorter.length)));
+}
+
+/** True when volume metadata or title text indicates English. */
+export function isEnglishVolume(volume: GoogleVolume): boolean {
+  const lang = volume.volumeInfo?.language?.toLowerCase() ?? "";
+  if (lang === "en" || lang.startsWith("en-")) return true;
+  return isMostlyLatinTitle(volume.volumeInfo?.title ?? "");
+}
+
+/** Prefer English/Latin-script titles for catalog display. */
+export function isMostlyLatinTitle(title: string): boolean {
+  const letters = title.match(/\p{L}/gu);
+  if (!letters || letters.length === 0) return true;
+  const latin = title.match(/[A-Za-z\u00C0-\u024F]/g);
+  return (latin?.length ?? 0) / letters.length >= 0.85;
+}
+
+export function englishTitleScore(title: string): number {
+  return isMostlyLatinTitle(title) ? 25 : 0;
 }
 
 export function resolveGoogleVolumeThumbnail(
@@ -131,18 +151,21 @@ export function mapGoogleVolume(item: GoogleVolume): BookSearchResult {
 export function pickBestVolume(volumes: GoogleVolume[]): GoogleVolume | null {
   if (!volumes.length) return null;
 
-  const pageCounts = volumes
+  const englishFirst = volumes.filter(isEnglishVolume);
+  const pool = englishFirst.length > 0 ? englishFirst : volumes;
+
+  const pageCounts = pool
     .map((v) => v.volumeInfo?.pageCount ?? 0)
     .filter((p) => p > 0);
 
   const targetPages = pickMedianPageCount(pageCounts);
-  const plausible = volumes.filter((v) =>
+  const plausible = pool.filter((v) =>
     isPlausiblePageCount(v.volumeInfo?.pageCount ?? 0),
   );
-  const pool = plausible.length > 0 ? plausible : volumes;
+  const candidates = plausible.length > 0 ? plausible : pool;
 
   if (targetPages != null) {
-    return pool.reduce((best, current) => {
+    return candidates.reduce((best, current) => {
       const bestPages = best.volumeInfo?.pageCount ?? 0;
       const currentPages = current.volumeInfo?.pageCount ?? 0;
       const bestDist = Math.abs(bestPages - targetPages);
@@ -153,7 +176,7 @@ export function pickBestVolume(volumes: GoogleVolume[]): GoogleVolume | null {
     });
   }
 
-  return pool.reduce((best, current) => {
+  return candidates.reduce((best, current) => {
     const bestPages = best.volumeInfo?.pageCount ?? 0;
     const currentPages = current.volumeInfo?.pageCount ?? 0;
     return currentPages > bestPages ? current : best;
@@ -226,6 +249,8 @@ export function buildGoogleBooksSearchQuery(raw: string): string {
   return `${safe} ${titleCheck}`;
 }
 
+const GOOGLE_BOOKS_LANG_RESTRICT = "en";
+
 function titleRelevanceScore(title: string, query: string): number {
   const normalizedQuery = normalizeTitle(query);
   const normalizedTitle = normalizeTitle(title);
@@ -265,7 +290,7 @@ export function rankSearchResultsByRelevance(
     .map((book, index) => ({
       book,
       index,
-      score: titleRelevanceScore(book.title, query),
+      score: titleRelevanceScore(book.title, query) + englishTitleScore(book.title),
     }))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
@@ -284,6 +309,7 @@ export async function fetchGoogleVolumes(
     printType: "books",
     orderBy: "relevance",
     projection: "full",
+    langRestrict: GOOGLE_BOOKS_LANG_RESTRICT,
   });
 
   const response = await fetch(`${GOOGLE_BOOKS_API}?${params.toString()}`, {

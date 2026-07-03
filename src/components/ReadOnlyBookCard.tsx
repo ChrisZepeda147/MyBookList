@@ -7,6 +7,7 @@ import { StarRating } from "@/components/StarRating";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadges } from "@/components/CategoryBadges";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
+import { ensureBookDescription } from "@/lib/book-descriptions";
 
 interface ReadOnlyBookCardProps {
   book: BookEntry;
@@ -62,15 +63,13 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           )}
         </button>
 
-        {book.description && (
-          <button
-            type="button"
-            onClick={() => onSelect(book)}
-            className="book-description-clamp w-full min-w-0 text-left text-sm text-slate-500"
-          >
-            {book.description}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => onSelect(book)}
+          className="w-full min-w-0 text-left text-sm text-slate-500"
+        >
+          {ensureBookDescription(book.description)}
+        </button>
 
         <div className="mt-auto flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
