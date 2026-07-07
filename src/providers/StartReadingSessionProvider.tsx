@@ -116,36 +116,26 @@ export function StartReadingSessionProvider({
     if (restoredSnapshot?.id === sessionBookId) {
       return restoredSnapshot;
     }
-    if (!resolveStoredActiveSessionBookId()) return null;
-    return {
-      id: sessionBookId,
-      title: "Your book",
-      author: "",
-      currentPage: null,
-      pageCount: null,
-    };
+    return null;
   }, [restoredSnapshot, sessionBook, sessionBookId]);
 
   useEffect(() => {
     if (!uiHydrated || !loaded || !sessionBookId) return;
 
-    const storedId = resolveStoredActiveSessionBookId();
-    if (!storedId) {
-      setSessionBookId(null);
-      setRestoredSnapshot(null);
-      return;
-    }
-
-    if (storedId !== sessionBookId) {
-      setSessionBookId(storedId);
-      return;
-    }
-
     if (!books.some((book) => book.id === sessionBookId)) {
-      clearReadingSession(sessionBookId);
-      clearReadingSessionUiState();
+      const storedId = resolveStoredActiveSessionBookId();
+      if (storedId === sessionBookId) {
+        clearReadingSession(sessionBookId);
+        clearReadingSessionUiState();
+      }
       setSessionBookId(null);
       setRestoredSnapshot(null);
+      return;
+    }
+
+    const storedId = resolveStoredActiveSessionBookId();
+    if (storedId && storedId !== sessionBookId) {
+      setSessionBookId(storedId);
     }
   }, [books, sessionBookId, uiHydrated, loaded]);
 
@@ -162,6 +152,7 @@ export function StartReadingSessionProvider({
 
   const closeSession = useCallback(() => {
     setSessionBookId(null);
+    setRestoredSnapshot(null);
   }, []);
 
   const handleSessionCancel = useCallback(() => {

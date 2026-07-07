@@ -58,11 +58,16 @@ export function readReadingSessionBookSnapshot(): ReadingSessionBookSnapshot | n
 export function resolveStoredActiveSessionBookId(): string | null {
   const bookId = readReadingSessionModalBookId();
   if (!bookId) return null;
-  if (readReadingSessionActive()) return bookId;
+
   const stored = readReadingSession(bookId);
   if (stored?.status === "running" || stored?.status === "paused") {
     return bookId;
   }
+
+  if (readReadingSessionActive()) {
+    clearReadingSessionUiState();
+  }
+
   return null;
 }
 
