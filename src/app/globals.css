@@ -5,6 +5,7 @@
   --foreground: #0f172a;
   --primary: #2563eb;
   --accent: #fbbf24;
+  --font-body: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 @theme inline {
@@ -12,17 +13,50 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-quicksand), var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-nunito), var(--font-geist-sans), system-ui, sans-serif;
-  --font-reading: var(--font-reading-serif), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-quicksand), var(--font-geist-sans), system-ui, sans-serif;
+
+  /* Bump the type scale ~2px per step (xs→sm, sm→base, etc.) */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.75rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 2.75rem;
+  --text-5xl: 3.25rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 4rem;
+  --text-6xl--line-height: 1;
+}
+
+html {
+  font-family: var(--font-display);
 }
 
 body {
   background: #f8fafc;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  line-height: 1.75rem;
   scrollbar-gutter: stable;
+}
+
+/* Long-form book copy — grid, list, shelf, and modals */
+.book-description-clamp,
+.book-description-text {
+  font-family: var(--font-body);
 }
 
 .book-description-clamp {

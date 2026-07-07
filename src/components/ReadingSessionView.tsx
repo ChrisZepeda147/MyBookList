@@ -168,15 +168,15 @@ export function ReadingSessionView({
             </header>
 
             <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-8 pb-4 pt-2 text-center">
-              <h2 className="font-reading max-w-full truncate px-2 text-[2rem] font-medium leading-tight text-white sm:text-[2.35rem]">
+              <h2 className="font-display max-w-full truncate px-2 text-[2rem] font-bold leading-tight text-white sm:text-[2.35rem]">
                 {bookTitle}
               </h2>
-              <p className="font-reading mt-2 text-lg text-white/50">
+              <p className="mt-2 text-lg text-white/50">
                 by {bookAuthor}
               </p>
 
               <p
-                className="font-reading mt-8 text-[3.75rem] font-normal leading-none tracking-[0.03em] text-white tabular-nums sm:text-[4.75rem]"
+                className="font-display mt-8 text-[3.75rem] font-semibold leading-none tracking-[0.03em] text-white tabular-nums sm:text-[4.75rem]"
                 aria-live="polite"
                 aria-label="Session timer"
               >

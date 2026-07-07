@@ -119,7 +119,7 @@ export function BookModalAbout({
     <div className="shrink-0">
       <h3 className="mb-1.5 text-sm font-semibold text-slate-700">About</h3>
       <p
-        className={`max-h-64 overflow-y-auto text-sm leading-relaxed pr-1 ${
+        className={`book-description-text max-h-64 overflow-y-auto text-sm leading-relaxed pr-1 ${
           isPlaceholder ? "italic text-slate-500" : "text-slate-600"
         }`}
       >

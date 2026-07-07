@@ -61,8 +61,8 @@ export function LibrarySection() {
     <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Library</h2>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h2 className="text-xl font-semibold text-slate-900">Library</h2>
+          <p className="mt-0.5 text-base text-slate-500">
             List, grid covers, or photorealistic bookshelf.
           </p>
         </div>

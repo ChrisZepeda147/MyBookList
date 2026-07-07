@@ -18,7 +18,7 @@ export function SitePageHeader({
       >
         {title}
       </h1>
-      <p className="max-w-2xl border-l-4 border-amber-300/90 pl-4 text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+      <p className="max-w-2xl border-l-4 border-amber-300/90 pl-4 text-lg font-medium leading-relaxed text-slate-600 sm:text-xl">
         {subtitle}
       </p>
     </header>

@@ -53,10 +53,10 @@ function CoverOnShelf({
           onClick={() => onSelect(book)}
           className="mt-1.5 w-full text-left"
         >
-          <p className="line-clamp-1 text-[10px] font-medium text-slate-800 sm:text-xs">
+          <p className="line-clamp-1 text-xs font-medium text-slate-800 sm:text-sm">
             {book.title}
           </p>
-          <p className="book-description-clamp mt-0.5 text-[9px] leading-snug text-slate-500 sm:text-[10px]">
+          <p className="book-description-clamp mt-0.5 text-xs leading-snug text-slate-500 sm:text-sm">
             {description}
           </p>
         </button>

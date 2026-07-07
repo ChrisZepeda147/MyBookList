@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookMarked, BookOpen, Plus, User } from "lucide-react";
+import { BookMarked, Plus, User } from "lucide-react";
 
 const links = [
-  { href: "/", label: "My List", icon: BookOpen },
+  { href: "/", label: "My List", useLogo: true as const },
   { href: "/reading", label: "Reading", icon: BookMarked },
   { href: "/add", label: "Add Book", icon: Plus },
   { href: "/profile", label: "Profile", icon: User },
@@ -19,27 +20,49 @@ export function Navigation() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 pb-7 pt-8 sm:px-6">
         <Link
           href="/"
-          className="flex items-center gap-3 text-3xl font-bold text-blue-600 transition-colors hover:text-blue-700"
+          className="font-display flex items-center gap-3 text-4xl font-extrabold tracking-tight text-blue-600 transition-colors hover:text-blue-700"
         >
-          <BookOpen className="h-12 w-12" />
+          <Image
+            src="/mybooklist-logo.png?v=3"
+            alt=""
+            width={48}
+            height={48}
+            className="h-12 w-12 shrink-0 object-contain"
+            unoptimized
+            priority
+          />
           <span>MyBookList</span>
         </Link>
 
         <nav className="flex items-center gap-1.5 sm:gap-2">
-          {links.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
+          {links.map((link) => {
+            const active = pathname === link.href;
+            const Icon = "icon" in link ? link.icon : null;
             return (
               <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-1.5 rounded-lg px-4 py-3 text-base font-medium transition-all duration-200 ${
+                key={link.href}
+                href={link.href}
+                className={`group flex items-center gap-1.5 rounded-lg px-4 py-3 text-lg font-medium transition-all duration-200 ${
                   active
                     ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                     : "text-slate-600 hover:bg-blue-50 hover:text-blue-600"
                 }`}
               >
-                <Icon className="h-6 w-6" />
-                <span>{label}</span>
+                {link.useLogo ? (
+                  <Image
+                    src="/mybooklist-logo.png?v=3"
+                    alt=""
+                    width={24}
+                    height={24}
+                    className={`h-6 w-6 shrink-0 object-contain contrast-[1.08] ${
+                      active ? "grayscale invert" : "grayscale"
+                    }`}
+                    unoptimized
+                  />
+                ) : (
+                  Icon && <Icon className="h-6 w-6" />
+                )}
+                <span>{link.label}</span>
               </Link>
             );
           })}

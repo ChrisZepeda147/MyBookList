@@ -49,7 +49,7 @@ function SpineOnShelf({
             }}
           >
             <span
-              className="library-spine-title relative z-[1] font-reading max-h-[88%] overflow-hidden px-0.5 text-center text-[8px] font-medium leading-snug tracking-wide text-amber-50/95 antialiased sm:text-[9px]"
+              className="library-spine-title font-display relative z-[1] max-h-[88%] overflow-hidden px-0.5 text-center text-[8px] font-semibold leading-snug tracking-wide text-amber-50/95 antialiased sm:text-[9px]"
               style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
             >
               {book.title}
