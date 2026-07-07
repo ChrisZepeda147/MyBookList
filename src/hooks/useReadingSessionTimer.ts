@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  clearReadingSession,
   computeElapsedMs,
   createIdleSession,
   formatElapsed,
@@ -149,6 +150,13 @@ export function useReadingSessionTimer(
     });
   }, [syncDisplay]);
 
+  const handleCancelSession = useCallback(() => {
+    clearReadingSession(bookId);
+    const idle = createIdleSession(bookId, progressPageRef.current);
+    setSession(idle);
+    setDisplayMs(0);
+  }, [bookId]);
+
   const status: ReadingSessionStatus = session.status;
   const isRunning = status === "running";
   const isPaused = status === "paused";
@@ -172,5 +180,6 @@ export function useReadingSessionTimer(
     handleResume,
     handleStop,
     handlePauseAndPersist,
+    handleCancelSession,
   };
 }

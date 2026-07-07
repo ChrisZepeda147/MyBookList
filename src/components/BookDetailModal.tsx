@@ -83,6 +83,10 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
     setShowReadingSession(false);
   }, []);
 
+  const handleSessionCancel = useCallback(() => {
+    setShowReadingSession(false);
+  }, []);
+
   const logReadingSession = useCallback(
     (startPage: number, endPage: number, elapsedMs: number) => {
       setCurrentPage(book.id, endPage);
@@ -190,6 +194,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
         pageCount={book.pageCount}
         isClosing={isClosing}
         onBack={handleBackFromSession}
+        onSessionCancel={handleSessionCancel}
         onSessionComplete={handleSessionComplete}
       />
     );

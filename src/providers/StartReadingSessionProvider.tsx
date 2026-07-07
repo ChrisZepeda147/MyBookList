@@ -18,9 +18,11 @@ import {
   buildSessionLogEntry,
 } from "@/lib/reading-session-log";
 import {
-  persistReadingSessionModalBookId,
+  clearReadingSessionUiState,
+  readReadingSessionActive,
   readReadingSessionModalBookId,
 } from "@/lib/reading-session-ui";
+import { readReadingSession } from "@/lib/reading-session-timer";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
 
@@ -44,13 +46,38 @@ export function StartReadingSessionProvider({
   const [uiHydrated, setUiHydrated] = useState(false);
 
   useEffect(() => {
-    setSessionBookId(readReadingSessionModalBookId());
+    const bookId = readReadingSessionModalBookId();
+    const active = readReadingSessionActive();
+    if (bookId && active) {
+      setSessionBookId(bookId);
+    } else if (bookId) {
+      const stored = readReadingSession(bookId);
+      if (stored?.status === "running" || stored?.status === "paused") {
+        setSessionBookId(bookId);
+      }
+    }
     setUiHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!uiHydrated) return;
-    persistReadingSessionModalBookId(sessionBookId);
+
+    function restoreActiveSession() {
+      if (sessionBookId) return;
+      const bookId = readReadingSessionModalBookId();
+      if (!bookId || !readReadingSessionActive()) return;
+      setSessionBookId(bookId);
+    }
+
+    document.addEventListener("visibilitychange", restoreActiveSession);
+    window.addEventListener("pageshow", restoreActiveSession);
+    window.addEventListener("focus", restoreActiveSession);
+
+    return () => {
+      document.removeEventListener("visibilitychange", restoreActiveSession);
+      window.removeEventListener("pageshow", restoreActiveSession);
+      window.removeEventListener("focus", restoreActiveSession);
+    };
   }, [sessionBookId, uiHydrated]);
 
   const sessionBook = useMemo(
@@ -73,6 +100,11 @@ export function StartReadingSessionProvider({
     setSessionBookId(null);
   }, []);
 
+  const handleSessionCancel = useCallback(() => {
+    clearReadingSessionUiState();
+    setSessionBookId(null);
+  }, []);
+
   const handleSessionComplete = useCallback(
     (payload: ReadingSessionCompletePayload) => {
       if (!sessionBook) return;
@@ -90,6 +122,7 @@ export function StartReadingSessionProvider({
           }),
         );
       }
+      clearReadingSessionUiState();
       setSessionBookId(null);
     },
     [sessionBook, setCurrentPage, user?.id],
@@ -108,6 +141,7 @@ export function StartReadingSessionProvider({
           currentPage={sessionBook.currentPage}
           pageCount={sessionBook.pageCount}
           onBack={closeSession}
+          onSessionCancel={handleSessionCancel}
           onSessionComplete={handleSessionComplete}
         />
       )}

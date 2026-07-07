@@ -5,6 +5,10 @@ import { createPortal } from "react-dom";
 import { ChevronLeft } from "lucide-react";
 import { useReadingSessionTimer } from "@/hooks/useReadingSessionTimer";
 import { resolveReadingStartPage } from "@/lib/reading-session-timer";
+import {
+  clearReadingSessionUiState,
+  persistActiveReadingSession,
+} from "@/lib/reading-session-ui";
 import { ReadingSessionStopPrompt } from "@/components/ReadingSessionStopPrompt";
 
 export interface ReadingSessionCompletePayload {
@@ -21,6 +25,7 @@ interface ReadingSessionViewProps {
   pageCount?: number | null;
   isClosing?: boolean;
   onBack: () => void;
+  onSessionCancel?: () => void;
   onSessionComplete?: (payload: ReadingSessionCompletePayload) => void;
 }
 
@@ -36,6 +41,7 @@ export function ReadingSessionView({
   pageCount,
   isClosing = false,
   onBack,
+  onSessionCancel,
   onSessionComplete,
 }: ReadingSessionViewProps) {
   const [mounted, setMounted] = useState(false);
@@ -59,18 +65,32 @@ export function ReadingSessionView({
     handleResume,
     handleStop,
     handlePauseAndPersist,
+    handleCancelSession,
   } = useReadingSessionTimer(bookId, defaultStartPage);
+
+  const hasActiveTimer = isRunning || isPaused;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+    if (hasActiveTimer) {
+      persistActiveReadingSession(bookId);
+    }
+  }, [bookId, hasActiveTimer, hydrated]);
+
+  useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !showStopPrompt) {
-        if (isRunning) handlePauseAndPersist();
-        onBack();
+      if (e.key !== "Escape" || showStopPrompt) return;
+      if (isRunning) {
+        handlePauseAndPersist();
+        return;
       }
+      if (isPaused) return;
+      clearReadingSessionUiState();
+      onBack();
     }
     document.addEventListener("keydown", handleKey);
     document.body.style.overflow = "hidden";
@@ -78,15 +98,26 @@ export function ReadingSessionView({
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = "";
     };
-  }, [handlePauseAndPersist, isRunning, onBack, showStopPrompt]);
+  }, [
+    handlePauseAndPersist,
+    isPaused,
+    isRunning,
+    onBack,
+    showStopPrompt,
+  ]);
 
   function handleBack() {
     if (showStopPrompt) return;
-    if (isRunning) handlePauseAndPersist();
+    if (isRunning) {
+      handlePauseAndPersist();
+      return;
+    }
+    if (isPaused) return;
+    clearReadingSessionUiState();
     onBack();
   }
 
-  function handleStopClick() {
+  function handleSaveSessionClick() {
     if (isIdle) return;
     if (isRunning) handlePause();
     setPendingElapsedMs(getElapsedMs());
@@ -103,11 +134,20 @@ export function ReadingSessionView({
   function handleConfirmStop(endPage: number) {
     const { elapsedMs, startPage } = handleStop(endPage);
     setShowStopPrompt(false);
+    clearReadingSessionUiState();
     onSessionComplete?.({
       elapsedMs,
       startPage,
       endPage,
     });
+    onBack();
+  }
+
+  function handleCancelSessionClick() {
+    if (showStopPrompt) return;
+    handleCancelSession();
+    clearReadingSessionUiState();
+    onSessionCancel?.();
     onBack();
   }
 
@@ -219,13 +259,22 @@ export function ReadingSessionView({
                 </button>
                 <button
                   type="button"
-                  onClick={handleStopClick}
+                  onClick={handleSaveSessionClick}
                   disabled={isIdle}
                   className="rounded-full bg-[#dc3b3b] py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#c93434] disabled:cursor-not-allowed disabled:opacity-35"
                 >
-                  STOP
+                  SAVE SESSION
                 </button>
               </div>
+              {!isIdle && (
+                <button
+                  type="button"
+                  onClick={handleCancelSessionClick}
+                  className="mt-3 w-full rounded-full border border-white/15 py-3 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                >
+                  Cancel Session
+                </button>
+              )}
             </footer>
           </div>
         </div>,
