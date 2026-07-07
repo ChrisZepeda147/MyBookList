@@ -121,6 +121,12 @@ drop policy if exists "Users can view own reading sessions" on public.reading_se
 create policy "Users can view own reading sessions"
   on public.reading_sessions for select using (auth.uid() = user_id);
 
+drop policy if exists "Authenticated users can view all reading sessions" on public.reading_sessions;
+create policy "Authenticated users can view all reading sessions"
+  on public.reading_sessions for select
+  to authenticated
+  using (true);
+
 drop policy if exists "Users can insert own reading sessions" on public.reading_sessions;
 create policy "Users can insert own reading sessions"
   on public.reading_sessions for insert with check (auth.uid() = user_id);
