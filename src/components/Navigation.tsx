@@ -16,11 +16,11 @@ export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
+    <header className="app-navigation sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 pb-7 pt-8 sm:px-6">
         <Link
           href="/"
-          className="font-display flex items-center gap-3 text-4xl font-extrabold tracking-tight text-blue-600 transition-colors hover:text-blue-700"
+          className="nav-brand font-display flex items-center gap-3 font-extrabold tracking-tight text-blue-600 transition-colors hover:text-blue-700"
         >
           <Image
             src="/mybooklist-logo.png?v=3"
@@ -42,7 +42,7 @@ export function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`group flex items-center gap-1.5 rounded-lg px-4 py-3 text-lg font-medium transition-all duration-200 ${
+                className={`nav-link group flex items-center gap-1.5 rounded-lg px-4 py-3 font-medium transition-all duration-200 ${
                   active
                     ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                     : "text-slate-600 hover:bg-blue-50 hover:text-blue-600"

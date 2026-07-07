@@ -17,26 +17,26 @@
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-quicksand), var(--font-geist-sans), system-ui, sans-serif;
 
-  /* Bump the type scale ~2px per step (xs→sm, sm→base, etc.) */
-  --text-xs: 0.875rem;
-  --text-xs--line-height: 1.25rem;
-  --text-sm: 1rem;
-  --text-sm--line-height: 1.5rem;
-  --text-base: 1.125rem;
-  --text-base--line-height: 1.75rem;
-  --text-lg: 1.25rem;
-  --text-lg--line-height: 1.75rem;
-  --text-xl: 1.375rem;
-  --text-xl--line-height: 1.75rem;
-  --text-2xl: 1.75rem;
-  --text-2xl--line-height: 2rem;
-  --text-3xl: 2.125rem;
-  --text-3xl--line-height: 2.25rem;
-  --text-4xl: 2.5rem;
-  --text-4xl--line-height: 2.75rem;
-  --text-5xl: 3.25rem;
+  /* Type scale — bumped ~2px per step, plus +1px app-wide (nav excluded) */
+  --text-xs: 0.9375rem;
+  --text-xs--line-height: 1.3125rem;
+  --text-sm: 1.0625rem;
+  --text-sm--line-height: 1.5625rem;
+  --text-base: 1.1875rem;
+  --text-base--line-height: 1.8125rem;
+  --text-lg: 1.3125rem;
+  --text-lg--line-height: 1.8125rem;
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: 1.8125rem;
+  --text-2xl: 1.8125rem;
+  --text-2xl--line-height: 2.0625rem;
+  --text-3xl: 2.1875rem;
+  --text-3xl--line-height: 2.3125rem;
+  --text-4xl: 2.5625rem;
+  --text-4xl--line-height: 2.8125rem;
+  --text-5xl: 3.3125rem;
   --text-5xl--line-height: 1;
-  --text-6xl: 4rem;
+  --text-6xl: 4.0625rem;
   --text-6xl--line-height: 1;
 }
 
@@ -48,9 +48,20 @@ body {
   background: #f8fafc;
   color: var(--foreground);
   font-family: var(--font-display);
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 1.1875rem;
+  line-height: 1.8125rem;
   scrollbar-gutter: stable;
+}
+
+/* Keep top navigation at pre-bump sizes. */
+.app-navigation .nav-brand {
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+}
+
+.app-navigation .nav-link {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 
 /* Long-form book copy — grid, list, shelf, and modals */
@@ -92,7 +103,10 @@ body {
 }
 
 .modal-panel--reading-session {
-  max-width: min(calc(100% / 1.3), calc(47.25rem / 1.3));
+  transform: scale(1.69);
+  transform-origin: center center;
+  width: calc(100% / 1.69);
+  max-width: min(calc(100% / 1.69), calc(47.25rem * 1.3 / 1.69));
   min-height: min(72vh, 28.8rem);
   max-height: min(96vh, 60rem);
 }
@@ -127,7 +141,7 @@ body {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
   textarea,
   select {
-    font-size: 16px !important;
+    font-size: 17px !important;
   }
 }
 

@@ -492,7 +492,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
                       className="h-full w-full object-cover"
                     />
                     {book.pageCount != null && book.pageCount > 0 && (
-                      <span className="absolute bottom-1 left-1 rounded bg-slate-900/75 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <span className="absolute bottom-1 left-1 rounded bg-slate-900/75 px-1.5 py-0.5 text-[11px] font-medium text-white">
                         {book.pageCount}p
                       </span>
                     )}
@@ -500,7 +500,7 @@ export function RecommendedBooks({ onSelect }: RecommendedBooksProps) {
                   <p className="mt-2 line-clamp-2 text-xs font-medium text-slate-700 transition-colors group-hover:text-blue-600">
                     {book.title}
                   </p>
-                  <p className="line-clamp-1 text-[10px] text-slate-400">
+                  <p className="line-clamp-1 text-[11px] text-slate-400">
                     {book.author}
                   </p>
                   {(book.categories.length > 0 ||

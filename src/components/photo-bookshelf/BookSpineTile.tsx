@@ -88,7 +88,7 @@ export function BookSpineTile({
           ) : null}
           <div className="photo-book-spine-shade absolute inset-0 z-[1]" />
           <span
-            className="library-spine-title relative z-[2] mx-auto block max-h-[88%] overflow-hidden text-center text-[6px] font-medium leading-tight tracking-wide text-amber-50/95 sm:text-[7px]"
+            className="library-spine-title relative z-[2] mx-auto block max-h-[88%] overflow-hidden text-center text-[7px] font-medium leading-tight tracking-wide text-amber-50/95 sm:text-[8px]"
             style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
           >
             {title}

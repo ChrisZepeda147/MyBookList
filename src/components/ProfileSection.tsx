@@ -123,7 +123,7 @@ export function ProfileSection() {
           <button
             type="button"
             onClick={() => setRankRewardsOpen(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[12px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
           >
             <Trophy className="h-3 w-3" />
             Rank Rewards

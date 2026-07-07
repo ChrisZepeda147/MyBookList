@@ -99,12 +99,12 @@ export function PhotoBookshelfView({
         readOnly={readOnly}
       />
       {!readOnly && (
-        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[11px] text-amber-100/90 backdrop-blur-sm">
+        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[12px] text-amber-100/90 backdrop-blur-sm">
           Tap a book to select · Tap a shelf to place · Double-tap for details
         </p>
       )}
       {readOnly && (
-        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[11px] text-amber-100/90 backdrop-blur-sm">
+        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[12px] text-amber-100/90 backdrop-blur-sm">
           Click a book for details
         </p>
       )}

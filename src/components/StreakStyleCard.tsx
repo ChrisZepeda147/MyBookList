@@ -156,7 +156,7 @@ export function StreakStyleCard({
           {dayIndex}
         </span>
         {showLabel && (
-          <span className="text-[9px] font-medium text-slate-500 sm:text-[10px]">days</span>
+          <span className="text-[10px] font-medium text-slate-500 sm:text-[11px]">days</span>
         )}
       </div>
     );
@@ -174,7 +174,7 @@ export function StreakStyleCard({
           {dayIndex}
         </span>
         {showLabel && (
-          <span className="text-[10px] font-medium">days</span>
+          <span className="text-[11px] font-medium">days</span>
         )}
       </div>
     );
@@ -199,7 +199,7 @@ export function StreakStyleCard({
           {dayIndex}
         </span>
         {showLabel && (
-          <span className="text-[10px] font-medium text-slate-500">days</span>
+          <span className="text-[11px] font-medium text-slate-500">days</span>
         )}
       </div>
     );
@@ -222,7 +222,7 @@ export function StreakStyleCard({
           {dayIndex}
         </span>
         {showLabel && (
-          <span className="text-[10px] font-medium opacity-90">days</span>
+          <span className="text-[11px] font-medium opacity-90">days</span>
         )}
       </div>
     );
@@ -247,7 +247,7 @@ export function StreakStyleCard({
         {dayIndex}
       </span>
       {showLabel && (
-        <span className={`text-[10px] font-medium ${isMuted ? "opacity-70" : "opacity-90"}`}>
+        <span className={`text-[11px] font-medium ${isMuted ? "opacity-70" : "opacity-90"}`}>
           days
         </span>
       )}

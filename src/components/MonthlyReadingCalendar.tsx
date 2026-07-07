@@ -52,7 +52,7 @@ export function MonthlyReadingCalendar() {
       <div className="mx-auto w-[75%] min-w-[75%] max-w-full">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               Monthly counter
             </p>
             <p className="truncate font-display text-sm font-bold text-slate-900 sm:text-base">
@@ -72,7 +72,7 @@ export function MonthlyReadingCalendar() {
               <button
                 type="button"
                 onClick={() => setView(today)}
-                className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
+                className="rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
               >
                 Today
               </button>
@@ -89,7 +89,7 @@ export function MonthlyReadingCalendar() {
           </div>
         </div>
 
-        <p className="mb-2 text-[11px] font-medium text-slate-500">
+        <p className="mb-2 text-[12px] font-medium text-slate-500">
           {daysReadThisMonth} {daysReadThisMonth === 1 ? "day" : "days"} read
         </p>
 
@@ -97,7 +97,7 @@ export function MonthlyReadingCalendar() {
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
-              className="pb-0.5 text-center text-[8px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[9px]"
+              className="pb-0.5 text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[10px]"
             >
               {label}
             </div>
@@ -118,7 +118,7 @@ export function MonthlyReadingCalendar() {
             return (
               <div
                 key={cell.dateKey}
-                className={`reading-calendar-cell-height flex items-center justify-center rounded-md text-[11px] font-semibold transition-colors sm:text-xs ${
+                className={`reading-calendar-cell-height flex items-center justify-center rounded-md text-[12px] font-semibold transition-colors sm:text-xs ${
                   cell.isToday && isCurrentMonth
                     ? "ring-1 ring-blue-500 ring-offset-1"
                     : ""

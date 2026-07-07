@@ -30,7 +30,7 @@ interface ReadingSessionViewProps {
 }
 
 const READING_SESSION_PANEL_CLASS =
-  "modal-panel modal-panel--reading-session relative z-10 flex w-full max-w-[47.25rem] flex-col overflow-hidden rounded-2xl bg-[#0a0a0a] shadow-2xl ring-1 ring-white/10 transition-all duration-200";
+  "modal-panel modal-panel--reading-session relative z-10 flex w-full flex-col overflow-hidden rounded-2xl bg-[#0a0a0a] shadow-2xl ring-1 ring-white/10 transition-all duration-200";
 
 /** Compact modal reading timer — warm book photo, serif typography. */
 export function ReadingSessionView({
@@ -255,7 +255,7 @@ export function ReadingSessionView({
             </header>
 
             <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-8 pb-4 pt-2 text-center">
-              <h2 className="font-display max-w-full truncate px-2 text-[2rem] font-bold leading-tight text-white sm:text-[2.35rem]">
+              <h2 className="font-display max-w-full truncate px-2 text-[2.0625rem] font-bold leading-tight text-white sm:text-[2.4125rem]">
                 {bookTitle}
               </h2>
               <p className="mt-2 text-lg text-white/50">
@@ -263,7 +263,7 @@ export function ReadingSessionView({
               </p>
 
               <p
-                className="font-display mt-8 text-[3.75rem] font-semibold leading-none tracking-[0.03em] text-white tabular-nums sm:text-[4.75rem]"
+                className="font-display mt-8 text-[3.8125rem] font-semibold leading-none tracking-[0.03em] text-white tabular-nums sm:text-[4.8125rem]"
                 aria-live="polite"
                 aria-label="Session timer"
               >

@@ -162,7 +162,7 @@ export function BookPreviewModal({
           <div className="flex flex-col items-start gap-1">
             <label
               htmlFor="preview-page-count"
-              className="text-[10px] font-medium uppercase tracking-wide text-slate-400"
+              className="text-[11px] font-medium uppercase tracking-wide text-slate-400"
             >
               Page count
             </label>

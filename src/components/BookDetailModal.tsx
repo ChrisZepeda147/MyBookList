@@ -213,7 +213,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
             <div className="flex flex-col items-start gap-1">
               <label
                 htmlFor={`page-count-${book.id}`}
-                className="text-[10px] font-medium uppercase tracking-wide text-slate-400"
+                className="text-[11px] font-medium uppercase tracking-wide text-slate-400"
               >
                 Page count
               </label>
@@ -247,7 +247,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
               <div className="flex flex-col items-end gap-1">
                 <label
                   htmlFor={`completed-date-${book.id}`}
-                  className="text-[10px] font-medium uppercase tracking-wide text-slate-400"
+                  className="text-[11px] font-medium uppercase tracking-wide text-slate-400"
                 >
                   Date completed
                 </label>
@@ -325,7 +325,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
             <BookOpen className="h-4 w-4" />
             {book.pageCount} pages
             {book.pageCountLocked && (
-              <span className="text-[10px] font-normal text-blue-500">
+              <span className="text-[11px] font-normal text-blue-500">
                 (edited)
               </span>
             )}

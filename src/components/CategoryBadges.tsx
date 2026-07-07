@@ -53,7 +53,7 @@ export function CategoryBadges({
         return (
           <span
             key={`${label}-${i}`}
-            className={`rounded-full font-medium ${compact ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs"} ${colorClass}`}
+            className={`rounded-full font-medium ${compact ? "px-1.5 py-0.5 text-[11px]" : "px-2.5 py-0.5 text-xs"} ${colorClass}`}
           >
             {label}
           </span>

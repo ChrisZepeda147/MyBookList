@@ -104,11 +104,11 @@ export function RankRewardsSection() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <p className="text-sm font-semibold text-slate-900">{reward.title}</p>
-                  <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">
                     {reward.unlockLabel}
                   </span>
                   {isActive && (
-                    <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                       Current
                     </span>
                   )}
