@@ -24,7 +24,7 @@ export default function AddBookPage() {
     <div className="space-y-8">
       <SitePageHeader
         title="Add a Book"
-        subtitle="Search the catalog, browse recommendations, or enter details manually."
+        subtitle="Search the catalog, or enter details manually."
       />
 
       <div className="flex rounded-xl bg-slate-100 p-1">
