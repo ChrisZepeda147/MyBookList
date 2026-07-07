@@ -17,12 +17,13 @@ import {
   appendReadingSessionLog,
   buildSessionLogEntry,
 } from "@/lib/reading-session-log";
+import { clearReadingSession } from "@/lib/reading-session-timer";
 import {
   clearReadingSessionUiState,
-  readReadingSessionActive,
-  readReadingSessionModalBookId,
+  readReadingSessionBookSnapshot,
+  resolveStoredActiveSessionBookId,
+  type ReadingSessionBookSnapshot,
 } from "@/lib/reading-session-ui";
-import { readReadingSession } from "@/lib/reading-session-timer";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
 
@@ -35,39 +36,50 @@ interface StartReadingSessionContextValue {
 const StartReadingSessionContext =
   createContext<StartReadingSessionContextValue | null>(null);
 
+function readInitialSessionBookId(): string | null {
+  if (typeof window === "undefined") return null;
+  return resolveStoredActiveSessionBookId();
+}
+
+function readInitialSnapshot(): ReadingSessionBookSnapshot | null {
+  if (typeof window === "undefined") return null;
+  return readReadingSessionBookSnapshot();
+}
+
 export function StartReadingSessionProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { books, setCurrentPage } = useBookStore();
+  const { books, loaded, setCurrentPage } = useBookStore();
   const { user } = useAuth();
-  const [sessionBookId, setSessionBookId] = useState<string | null>(null);
+  const [sessionBookId, setSessionBookId] = useState<string | null>(
+    readInitialSessionBookId,
+  );
+  const [restoredSnapshot, setRestoredSnapshot] =
+    useState<ReadingSessionBookSnapshot | null>(readInitialSnapshot);
   const [uiHydrated, setUiHydrated] = useState(false);
 
   useEffect(() => {
-    const bookId = readReadingSessionModalBookId();
-    const active = readReadingSessionActive();
-    if (bookId && active) {
-      setSessionBookId(bookId);
-    } else if (bookId) {
-      const stored = readReadingSession(bookId);
-      if (stored?.status === "running" || stored?.status === "paused") {
-        setSessionBookId(bookId);
-      }
-    }
     setUiHydrated(true);
   }, []);
 
+  const restoreActiveSession = useCallback(() => {
+    const storedId = resolveStoredActiveSessionBookId();
+    if (!storedId) return;
+    setSessionBookId((current) => current ?? storedId);
+    const snapshot = readReadingSessionBookSnapshot();
+    if (snapshot?.id === storedId) {
+      setRestoredSnapshot(snapshot);
+    }
+  }, []);
+
+  useEffect(() => {
+    restoreActiveSession();
+  }, [restoreActiveSession]);
+
   useEffect(() => {
     if (!uiHydrated) return;
-
-    function restoreActiveSession() {
-      if (sessionBookId) return;
-      const bookId = readReadingSessionModalBookId();
-      if (!bookId || !readReadingSessionActive()) return;
-      setSessionBookId(bookId);
-    }
 
     document.addEventListener("visibilitychange", restoreActiveSession);
     window.addEventListener("pageshow", restoreActiveSession);
@@ -78,22 +90,74 @@ export function StartReadingSessionProvider({
       window.removeEventListener("pageshow", restoreActiveSession);
       window.removeEventListener("focus", restoreActiveSession);
     };
-  }, [sessionBookId, uiHydrated]);
+  }, [restoreActiveSession, uiHydrated]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    restoreActiveSession();
+  }, [loaded, restoreActiveSession]);
 
   const sessionBook = useMemo(
     () => books.find((book) => book.id === sessionBookId) ?? null,
     [books, sessionBookId],
   );
 
-  useEffect(() => {
-    if (!uiHydrated || !sessionBookId) return;
-    if (!sessionBook) {
-      setSessionBookId(null);
+  const displaySession = useMemo((): ReadingSessionBookSnapshot | null => {
+    if (!sessionBookId) return null;
+    if (sessionBook) {
+      return {
+        id: sessionBook.id,
+        title: sessionBook.title,
+        author: sessionBook.author,
+        currentPage: sessionBook.currentPage,
+        pageCount: sessionBook.pageCount,
+      };
     }
-  }, [sessionBook, sessionBookId, uiHydrated]);
+    if (restoredSnapshot?.id === sessionBookId) {
+      return restoredSnapshot;
+    }
+    if (!resolveStoredActiveSessionBookId()) return null;
+    return {
+      id: sessionBookId,
+      title: "Your book",
+      author: "",
+      currentPage: null,
+      pageCount: null,
+    };
+  }, [restoredSnapshot, sessionBook, sessionBookId]);
+
+  useEffect(() => {
+    if (!uiHydrated || !loaded || !sessionBookId) return;
+
+    const storedId = resolveStoredActiveSessionBookId();
+    if (!storedId) {
+      setSessionBookId(null);
+      setRestoredSnapshot(null);
+      return;
+    }
+
+    if (storedId !== sessionBookId) {
+      setSessionBookId(storedId);
+      return;
+    }
+
+    if (!books.some((book) => book.id === sessionBookId)) {
+      clearReadingSession(sessionBookId);
+      clearReadingSessionUiState();
+      setSessionBookId(null);
+      setRestoredSnapshot(null);
+    }
+  }, [books, sessionBookId, uiHydrated, loaded]);
 
   const openSession = useCallback((book: BookEntry) => {
     setSessionBookId(book.id);
+    setRestoredSnapshot({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      currentPage: book.currentPage,
+      pageCount: book.pageCount,
+    });
   }, []);
 
   const closeSession = useCallback(() => {
@@ -103,19 +167,24 @@ export function StartReadingSessionProvider({
   const handleSessionCancel = useCallback(() => {
     clearReadingSessionUiState();
     setSessionBookId(null);
+    setRestoredSnapshot(null);
   }, []);
 
   const handleSessionComplete = useCallback(
     (payload: ReadingSessionCompletePayload) => {
-      if (!sessionBook) return;
-      setCurrentPage(sessionBook.id, payload.endPage);
+      const book =
+        sessionBook ??
+        (restoredSnapshot?.id === sessionBookId ? restoredSnapshot : null);
+      if (!book || !sessionBookId) return;
+
+      setCurrentPage(sessionBookId, payload.endPage);
       if (user?.id) {
         appendReadingSessionLog(
           user.id,
           buildSessionLogEntry({
-            bookId: sessionBook.id,
-            bookTitle: sessionBook.title,
-            bookAuthor: sessionBook.author,
+            bookId: sessionBookId,
+            bookTitle: book.title,
+            bookAuthor: book.author,
             startPage: payload.startPage,
             endPage: payload.endPage,
             elapsedMs: payload.elapsedMs,
@@ -124,8 +193,15 @@ export function StartReadingSessionProvider({
       }
       clearReadingSessionUiState();
       setSessionBookId(null);
+      setRestoredSnapshot(null);
     },
-    [sessionBook, setCurrentPage, user?.id],
+    [
+      restoredSnapshot,
+      sessionBook,
+      sessionBookId,
+      setCurrentPage,
+      user?.id,
+    ],
   );
 
   return (
@@ -133,13 +209,13 @@ export function StartReadingSessionProvider({
       value={{ openSession, closeSession, sessionBookId }}
     >
       {children}
-      {uiHydrated && sessionBook && (
+      {uiHydrated && displaySession && (
         <ReadingSessionView
-          bookId={sessionBook.id}
-          bookTitle={sessionBook.title}
-          bookAuthor={sessionBook.author}
-          currentPage={sessionBook.currentPage}
-          pageCount={sessionBook.pageCount}
+          bookId={displaySession.id}
+          bookTitle={displaySession.title}
+          bookAuthor={displaySession.author}
+          currentPage={displaySession.currentPage}
+          pageCount={displaySession.pageCount}
           onBack={closeSession}
           onSessionCancel={handleSessionCancel}
           onSessionComplete={handleSessionComplete}

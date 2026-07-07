@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft } from "lucide-react";
 import { useReadingSessionTimer } from "@/hooks/useReadingSessionTimer";
@@ -68,6 +68,18 @@ export function ReadingSessionView({
     handleCancelSession,
   } = useReadingSessionTimer(bookId, defaultStartPage);
 
+  const sessionSnapshot = {
+    id: bookId,
+    title: bookTitle,
+    author: bookAuthor,
+    currentPage,
+    pageCount,
+  };
+
+  const persistSessionActive = useCallback(() => {
+    persistActiveReadingSession(bookId, sessionSnapshot);
+  }, [bookAuthor, bookId, bookTitle, currentPage, pageCount]);
+
   const hasActiveTimer = isRunning || isPaused;
 
   useEffect(() => {
@@ -77,15 +89,47 @@ export function ReadingSessionView({
   useEffect(() => {
     if (!hydrated) return;
     if (hasActiveTimer) {
-      persistActiveReadingSession(bookId);
+      persistSessionActive();
     }
-  }, [bookId, hasActiveTimer, hydrated]);
+  }, [hasActiveTimer, hydrated, persistSessionActive]);
+
+  useEffect(() => {
+    if (!hydrated || !hasActiveTimer) return;
+
+    function persistBeforeBackground() {
+      persistSessionActive();
+    }
+
+    document.addEventListener("visibilitychange", persistBeforeBackground);
+    window.addEventListener("pagehide", persistBeforeBackground);
+
+    return () => {
+      document.removeEventListener("visibilitychange", persistBeforeBackground);
+      window.removeEventListener("pagehide", persistBeforeBackground);
+    };
+  }, [hasActiveTimer, hydrated, persistSessionActive]);
+
+  function handleStartSession() {
+    handleStart();
+    persistSessionActive();
+  }
+
+  function handlePauseSession() {
+    handlePause();
+    persistSessionActive();
+  }
+
+  function handleResumeSession() {
+    handleResume();
+    persistSessionActive();
+  }
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key !== "Escape" || showStopPrompt) return;
       if (isRunning) {
         handlePauseAndPersist();
+        persistSessionActive();
         return;
       }
       if (isPaused) return;
@@ -103,6 +147,7 @@ export function ReadingSessionView({
     isPaused,
     isRunning,
     onBack,
+    persistSessionActive,
     showStopPrompt,
   ]);
 
@@ -110,6 +155,7 @@ export function ReadingSessionView({
     if (showStopPrompt) return;
     if (isRunning) {
       handlePauseAndPersist();
+      persistSessionActive();
       return;
     }
     if (isPaused) return;
@@ -120,6 +166,7 @@ export function ReadingSessionView({
   function handleSaveSessionClick() {
     if (isIdle) return;
     if (isRunning) handlePause();
+    persistSessionActive();
     setPendingElapsedMs(getElapsedMs());
     setPendingStartPage(
       Math.max(sessionStartPage, defaultStartPage),
@@ -235,7 +282,7 @@ export function ReadingSessionView({
               {isIdle ? (
                 <button
                   type="button"
-                  onClick={handleStart}
+                  onClick={handleStartSession}
                   className="mt-10 text-sm font-semibold uppercase tracking-[0.35em] text-white transition-opacity hover:text-white/85"
                 >
                   START
@@ -251,7 +298,7 @@ export function ReadingSessionView({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={isRunning ? handlePause : handleResume}
+                  onClick={isRunning ? handlePauseSession : handleResumeSession}
                   disabled={isIdle}
                   className="rounded-full bg-[#2a2a2e] py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#34343a] disabled:cursor-not-allowed disabled:opacity-35"
                 >
