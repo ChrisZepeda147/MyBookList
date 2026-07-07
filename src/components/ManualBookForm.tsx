@@ -7,12 +7,18 @@ import { useBookStore } from "@/providers/BookStoreProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { resolveBookCategoryTags } from "@/lib/categories";
 import { resolveCoverUrl } from "@/lib/cover-url";
+import {
+  clearManualBookDraft,
+  readManualBookDraft,
+  writeManualBookDraft,
+} from "@/lib/add-book-drafts";
 import { uploadBookCover } from "@/lib/storage/book-cover";
 import { createClient } from "@/lib/supabase/client";
 
 interface ManualBookFormProps {
   prefill?: BookPrefill | null;
   onAdded?: () => void;
+  onCancel?: () => void;
 }
 
 function resolveCoverPreviewSrc(
@@ -23,20 +29,25 @@ function resolveCoverPreviewSrc(
   return resolveCoverUrl(coverUrl, "list");
 }
 
-export function ManualBookForm({ prefill, onAdded }: ManualBookFormProps) {
+export function ManualBookForm({ prefill, onAdded, onCancel }: ManualBookFormProps) {
   const { user } = useAuth();
   const { addBook } = useBookStore();
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [coverUrl, setCoverUrl] = useState("");
+  const initialDraft = readManualBookDraft();
+  const [title, setTitle] = useState(initialDraft.title);
+  const [author, setAuthor] = useState(initialDraft.author);
+  const [coverUrl, setCoverUrl] = useState(initialDraft.coverUrl);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
-  const [description, setDescription] = useState("");
-  const [pageCount, setPageCount] = useState("");
-  const [googleBooksId, setGoogleBooksId] = useState<string | undefined>();
-  const [apiCategories, setApiCategories] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [description, setDescription] = useState(initialDraft.description);
+  const [pageCount, setPageCount] = useState(initialDraft.pageCount);
+  const [googleBooksId, setGoogleBooksId] = useState<string | undefined>(
+    initialDraft.googleBooksId,
+  );
+  const [apiCategories, setApiCategories] = useState<string[]>(
+    initialDraft.apiCategories,
+  );
+  const [categories, setCategories] = useState<string[]>(initialDraft.categories);
 
   useEffect(() => {
     return () => {
@@ -45,6 +56,28 @@ export function ManualBookForm({ prefill, onAdded }: ManualBookFormProps) {
       }
     };
   }, [coverPreviewUrl]);
+
+  useEffect(() => {
+    writeManualBookDraft({
+      title,
+      author,
+      description,
+      pageCount,
+      coverUrl,
+      googleBooksId,
+      apiCategories,
+      categories,
+    });
+  }, [
+    title,
+    author,
+    description,
+    pageCount,
+    coverUrl,
+    googleBooksId,
+    apiCategories,
+    categories,
+  ]);
 
   useEffect(() => {
     if (!prefill) return;
@@ -61,7 +94,34 @@ export function ManualBookForm({ prefill, onAdded }: ManualBookFormProps) {
       URL.revokeObjectURL(coverPreviewUrl);
       setCoverPreviewUrl(null);
     }
+    writeManualBookDraft({
+      title: prefill.title,
+      author: prefill.author,
+      description: prefill.description,
+      pageCount: prefill.pageCount ? String(prefill.pageCount) : "",
+      coverUrl: prefill.coverUrl,
+      googleBooksId: prefill.googleBooksId,
+      apiCategories: prefill.apiCategories ?? [],
+      categories: prefill.categories,
+    });
   }, [prefill]);
+
+  function resetForm() {
+    setTitle("");
+    setAuthor("");
+    setCoverUrl("");
+    setDescription("");
+    setPageCount("");
+    setGoogleBooksId(undefined);
+    setApiCategories([]);
+    setCategories([]);
+    setCoverError(null);
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+      setCoverPreviewUrl(null);
+    }
+    clearManualBookDraft();
+  }
 
   async function handleCoverFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -119,7 +179,13 @@ export function ManualBookForm({ prefill, onAdded }: ManualBookFormProps) {
       googleBooksId,
     });
 
+    resetForm();
     onAdded?.();
+  }
+
+  function handleCancel() {
+    resetForm();
+    onCancel?.();
   }
 
   const coverDisplaySrc = resolveCoverPreviewSrc(coverUrl, coverPreviewUrl);
@@ -225,13 +291,23 @@ export function ManualBookForm({ prefill, onAdded }: ManualBookFormProps) {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={coverUploading}
-        className="w-full rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow-md shadow-blue-600/25 transition-all duration-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Add to My List
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="submit"
+          disabled={coverUploading}
+          className="w-full rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow-md shadow-blue-600/25 transition-all duration-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
+        >
+          Add to My List
+        </button>
+        <button
+          type="button"
+          onClick={handleCancel}
+          disabled={coverUploading}
+          className="w-full rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }

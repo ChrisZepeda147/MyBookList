@@ -77,9 +77,9 @@ export default function AddBookPage() {
           )}
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
             <ManualBookForm
-              key={prefill?.title ?? "empty"}
               prefill={prefill}
               onAdded={() => showAddedToast()}
+              onCancel={() => setPrefill(null)}
             />
           </div>
           <RecommendedBooks onSelect={setPreviewBook} />

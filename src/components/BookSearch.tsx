@@ -20,6 +20,11 @@ import {
   resolveCoverUrl,
 } from "@/lib/cover-url";
 import { CategoryBadges } from "@/components/CategoryBadges";
+import {
+  clearAddBookSearchDraft,
+  readAddBookSearchDraft,
+  writeAddBookSearchDraft,
+} from "@/lib/add-book-drafts";
 
 interface BookSearchProps {
   onManualEntry: () => void;
@@ -30,7 +35,7 @@ const BOOKS_API_UNAVAILABLE =
   "Search temporarily unavailable. Please try again in a moment.";
 
 function normalizeSearchQuery(raw: string): string {
-  return raw.trim().replace(/\s+/g, " ").toLowerCase();
+  return raw.trim().replace(/\s+/g, " ");
 }
 
 const SEARCH_TIMEOUT_MESSAGE =
@@ -210,7 +215,7 @@ async function searchLiveBooks(
 }
 
 export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => readAddBookSearchDraft());
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [source, setSource] = useState<"google" | "openlibrary" | null>(null);
   const [loading, setLoading] = useState(false);
@@ -223,6 +228,10 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const searchGenerationRef = useRef(0);
+
+  useEffect(() => {
+    writeAddBookSearchDraft(query);
+  }, [query]);
 
   const search = useCallback(async (rawQuery: string) => {
     const normalizedQuery = normalizeSearchQuery(rawQuery);
@@ -299,6 +308,7 @@ export function BookSearch({ onManualEntry, onSelect }: BookSearchProps) {
     setLoading(false);
     setError(null);
     setHasSearched(false);
+    clearAddBookSearchDraft();
   }, []);
 
   useEffect(() => {

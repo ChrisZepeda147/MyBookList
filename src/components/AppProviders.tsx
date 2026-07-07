@@ -10,6 +10,7 @@ import {
   useReadingSessionLog,
 } from "@/providers/ReadingSessionLogProvider";
 import { StreakShieldPrompt } from "@/components/StreakShieldPrompt";
+import { StartReadingSessionProvider } from "@/providers/StartReadingSessionProvider";
 
 function AppBootScreen() {
   return <AccountLoadingSpinner label="Loading your account" />;
@@ -53,7 +54,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <BookStoreProvider>
         <ReadingSessionLogProvider>
-          <AppShell>{children}</AppShell>
+          <StartReadingSessionProvider>
+            <AppShell>{children}</AppShell>
+          </StartReadingSessionProvider>
         </ReadingSessionLogProvider>
       </BookStoreProvider>
     </AuthProvider>

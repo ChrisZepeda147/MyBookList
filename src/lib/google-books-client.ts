@@ -228,28 +228,16 @@ export function buildGoogleParams(
   extra?: Record<string, string>,
 ): URLSearchParams {
   const params = new URLSearchParams(extra);
+  params.set("hl", "en");
   const apiKey = getGoogleBooksApiKey();
   if (apiKey) params.set("key", apiKey);
   return params;
 }
 
-/**
- * General catalog search: raw terms first, then a lightweight intitle boost so
- * real titles rank above tangential hits (without printType filtering).
- */
-export function buildGoogleBooksSearchQuery(raw: string): string {
-  const trimmed = raw.trim().replace(/\s+/g, " ");
-  if (!trimmed) return "";
-
-  const safe = trimmed.replace(/"/g, "");
-  const titleCheck = safe.includes(" ")
-    ? `intitle:"${safe}"`
-    : `intitle:${safe}`;
-
-  return `${safe} ${titleCheck}`;
+/** Trim and collapse whitespace — passed directly as Google Books `q`. */
+export function normalizeBookSearchQuery(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
 }
-
-const GOOGLE_BOOKS_LANG_RESTRICT = "en";
 
 function titleRelevanceScore(title: string, query: string): number {
   const normalizedQuery = normalizeTitle(query);
@@ -309,7 +297,6 @@ export async function fetchGoogleVolumes(
     printType: "books",
     orderBy: "relevance",
     projection: "full",
-    langRestrict: GOOGLE_BOOKS_LANG_RESTRICT,
   });
 
   const response = await fetch(`${GOOGLE_BOOKS_API}?${params.toString()}`, {

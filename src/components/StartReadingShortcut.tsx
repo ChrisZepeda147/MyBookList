@@ -2,27 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Timer } from "lucide-react";
-import type { BookEntry } from "@/lib/types";
+import { useStartReadingSession } from "@/providers/StartReadingSessionProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import {
-  ReadingSessionView,
-  type ReadingSessionCompletePayload,
-} from "@/components/ReadingSessionView";
-import {
-  appendReadingSessionLog,
-  buildSessionLogEntry,
-} from "@/lib/reading-session-log";
 
 export function StartReadingShortcut() {
-  const { books, loaded, setCurrentPage } = useBookStore();
-  const { user } = useAuth();
+  const { books, loaded } = useBookStore();
+  const { openSession } = useStartReadingSession();
   const readingBooks = useMemo(
     () => books.filter((book) => book.status === "reading"),
     [books],
   );
   const [selectedId, setSelectedId] = useState<string>("");
-  const [sessionBook, setSessionBook] = useState<BookEntry | null>(null);
 
   useEffect(() => {
     if (readingBooks.length === 0) {
@@ -37,43 +27,6 @@ export function StartReadingShortcut() {
     });
   }, [readingBooks]);
 
-  const logReadingSession = useCallback(
-    (book: BookEntry, startPage: number, endPage: number, elapsedMs: number) => {
-      setCurrentPage(book.id, endPage);
-      if (user?.id) {
-        appendReadingSessionLog(
-          user.id,
-          buildSessionLogEntry({
-            bookId: book.id,
-            bookTitle: book.title,
-            bookAuthor: book.author,
-            startPage,
-            endPage,
-            elapsedMs,
-          }),
-        );
-      }
-    },
-    [setCurrentPage, user?.id],
-  );
-
-  const handleSessionComplete = useCallback(
-    (payload: ReadingSessionCompletePayload) => {
-      if (!sessionBook) return;
-      logReadingSession(
-        sessionBook,
-        payload.startPage,
-        payload.endPage,
-        payload.elapsedMs,
-      );
-    },
-    [logReadingSession, sessionBook],
-  );
-
-  const openSession = useCallback((book: BookEntry) => {
-    setSessionBook(book);
-  }, []);
-
   const handleStartMultiple = useCallback(() => {
     const book = readingBooks.find((b) => b.id === selectedId);
     if (book) openSession(book);
@@ -81,20 +34,6 @@ export function StartReadingShortcut() {
 
   if (!loaded || readingBooks.length === 0) {
     return null;
-  }
-
-  if (sessionBook) {
-    return (
-      <ReadingSessionView
-        bookId={sessionBook.id}
-        bookTitle={sessionBook.title}
-        bookAuthor={sessionBook.author}
-        currentPage={sessionBook.currentPage}
-        pageCount={sessionBook.pageCount}
-        onBack={() => setSessionBook(null)}
-        onSessionComplete={handleSessionComplete}
-      />
-    );
   }
 
   if (readingBooks.length === 1) {

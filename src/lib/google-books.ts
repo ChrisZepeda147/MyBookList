@@ -20,11 +20,11 @@ import {
 } from "@/lib/google-books-circuit";
 import { isRateLimitStatus } from "@/lib/google-books-errors";
 import {
-  buildGoogleBooksSearchQuery,
   buildGoogleParams,
   fetchGoogleVolumeById,
   googleVolumeHasThumbnail,
   mapGoogleVolume,
+  normalizeBookSearchQuery,
   normalizeTitle,
   onlyWithCover,
   pickBestVolume,
@@ -139,15 +139,14 @@ async function enrichMissingDescriptions(
 export async function searchGoogleBooks(
   query: string,
 ): Promise<BookSearchResult[]> {
-  const searchQuery = query.trim();
+  const searchQuery = normalizeBookSearchQuery(query);
   if (!searchQuery) return [];
 
   const params = buildGoogleParams({
-    q: buildGoogleBooksSearchQuery(searchQuery),
+    q: searchQuery,
     maxResults: "25",
     orderBy: "relevance",
     projection: "full",
-    langRestrict: "en",
   });
 
   const url = `https://www.googleapis.com/books/v1/volumes?${params.toString()}`;
