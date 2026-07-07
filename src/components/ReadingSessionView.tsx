@@ -25,7 +25,7 @@ interface ReadingSessionViewProps {
 }
 
 const READING_SESSION_PANEL_CLASS =
-  "modal-panel modal-panel--wide relative z-10 flex max-h-[min(92vh,50rem)] w-full max-w-[45rem] flex-col overflow-hidden rounded-2xl bg-[#0a0a0a] shadow-2xl ring-1 ring-white/10 transition-all duration-200 sm:max-h-[min(90vh,45rem)]";
+  "modal-panel modal-panel--reading-session relative z-10 flex w-full max-w-[47.25rem] flex-col overflow-hidden rounded-2xl bg-[#0a0a0a] shadow-2xl ring-1 ring-white/10 transition-all duration-200";
 
 /** Compact modal reading timer — warm book photo, serif typography. */
 export function ReadingSessionView({

@@ -57,6 +57,18 @@ body {
   max-width: min(calc(100% / 1.3), calc(45rem / 1.3));
 }
 
+.modal-panel--reading-session {
+  max-width: min(calc(100% / 1.3), calc(47.25rem / 1.3));
+  min-height: min(72vh, 28.8rem);
+  max-height: min(96vh, 60rem);
+}
+
+@media (min-width: 640px) {
+  .modal-panel--reading-session {
+    max-height: min(94vh, 54rem);
+  }
+}
+
 .reading-calendar-cell-height {
   height: 3.51rem;
 }

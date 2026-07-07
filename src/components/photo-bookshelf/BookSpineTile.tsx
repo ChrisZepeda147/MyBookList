@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import type { BookEntry } from "@/lib/types";
-import { resolveCoverUrl } from "@/lib/cover-url";
+import { bookHasDisplayableCover, resolveCoverUrl } from "@/lib/cover-url";
 import { spineColorForBook } from "@/lib/library-spine";
 import type { SpinePlacementStyle } from "@/lib/photo-bookshelf/layout";
 
@@ -26,7 +27,9 @@ export function BookSpineTile({
   onSelectForMove,
 }: BookSpineTileProps) {
   const spineColor = spineColorForBook(book.id);
-  const coverUrl = resolveCoverUrl(book.coverUrl, "modal");
+  const coverSrc = bookHasDisplayableCover(book, "list")
+    ? resolveCoverUrl(book.coverUrl, "list")
+    : null;
 
   const title = useMemo(() => {
     return book.title.length > 36 ? `${book.title.slice(0, 34)}…` : book.title;
@@ -72,19 +75,20 @@ export function BookSpineTile({
         aria-pressed={!readOnly && isSelected ? true : undefined}
       >
         <div className="photo-book-spine-inner library-book-spine relative h-full w-full overflow-hidden rounded-t-[2px] border border-black/40">
-          {coverUrl ? (
-            <div
-              className="absolute inset-0 opacity-90"
-              style={{
-                backgroundImage: `url(${coverUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center top",
-              }}
+          {coverSrc ? (
+            <Image
+              src={coverSrc}
+              alt=""
+              fill
+              sizes="80px"
+              className="z-0 object-cover object-top"
+              unoptimized
+              aria-hidden
             />
           ) : null}
-          <div className="photo-book-spine-shade absolute inset-0" />
+          <div className="photo-book-spine-shade absolute inset-0 z-[1]" />
           <span
-            className="library-spine-title relative z-[1] mx-auto block max-h-[88%] overflow-hidden text-center text-[6px] font-medium leading-tight tracking-wide text-amber-50/95 sm:text-[7px]"
+            className="library-spine-title relative z-[2] mx-auto block max-h-[88%] overflow-hidden text-center text-[6px] font-medium leading-tight tracking-wide text-amber-50/95 sm:text-[7px]"
             style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
           >
             {title}
