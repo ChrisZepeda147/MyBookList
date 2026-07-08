@@ -2,7 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { AccountLoadingSpinner } from "@/components/AccountLoadingSpinner";
+import { CelebrationListener } from "@/components/CelebrationListener";
 import { Navigation } from "@/components/Navigation";
+import { ReadingWrappedOrchestrator } from "@/components/ReadingWrappedOrchestrator";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { BookStoreProvider, useBookStore } from "@/providers/BookStoreProvider";
 import {
@@ -42,6 +44,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <>
       <Navigation />
       <StreakShieldPrompt />
+      <CelebrationListener />
+      <ReadingWrappedOrchestrator />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {children}
       </main>

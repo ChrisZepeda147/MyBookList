@@ -17,8 +17,8 @@ const PhotoBookshelfView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[min(80vh,520px)] items-center justify-center rounded-xl border border-slate-200 bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-600/40 border-t-amber-500" />
+      <div className="premium-brown-surface photo-bookshelf-shell flex h-[min(80vh,520px)] items-center justify-center rounded-xl shadow-sm">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-200/30 border-t-amber-100" />
       </div>
     ),
   },

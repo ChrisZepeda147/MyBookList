@@ -248,6 +248,7 @@ export function appendReadingSessionLog(
     const existing = readReadingSessionLog(userId);
     persistLocal(userId, [record, ...existing]);
     void syncEntryToRemote(userId, record);
+    window.dispatchEvent(new CustomEvent("reading-session-saved"));
   } catch {
     // Ignore quota errors.
   }

@@ -170,6 +170,10 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
 
       setBooks((prev) => [optimistic, ...prev]);
 
+      if (book.status === "completed" && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("book-completed"));
+      }
+
       void (async () => {
         const supabase = createClient();
         const userId = userIdRef.current;
@@ -241,6 +245,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
   const setBookStatus = useCallback(
     (id: string, status: ReadingStatus) => {
       const book = booksRef.current.find((b) => b.id === id);
+      const wasCompleted = book?.status === "completed";
       const dateCompleted =
         status === "completed"
           ? book?.status === "completed" && book.dateCompleted
@@ -252,6 +257,9 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         dateCompleted,
         ...(status !== "completed" ? { rating: null } : {}),
       });
+      if (status === "completed" && !wasCompleted && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("book-completed"));
+      }
     },
     [updateBook],
   );

@@ -1,11 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { Pencil, Save, Target, Trophy, LogOut } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BookOpen, Flame, Pencil, Save, Sparkles, Target, Trophy, LogOut } from "lucide-react";
+import { getActiveAnnualBookRank } from "@/lib/annual-book-ranks";
+import {
+  computeWrappedStats,
+  getMostRecentCompletedHalf,
+} from "@/lib/reading-wrapped";
 import { useBookStore, useMetrics } from "@/providers/BookStoreProvider";
 import { GoalProgress } from "@/components/GoalProgress";
 import { RankRewardsModal } from "@/components/RankRewardsModal";
+import { ReadingWrappedModal } from "@/components/ReadingWrappedModal";
 import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import { useReadingStreak } from "@/hooks/useReadingStreak";
 import { getStreakRewardTextClassName } from "@/lib/reading-streak";
@@ -13,10 +19,12 @@ import { resolveAvatarDisplaySrc } from "@/lib/storage/avatar-url";
 import { uploadProfileAvatar } from "@/lib/storage/profile-avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { useReadingSessionLog } from "@/providers/ReadingSessionLogProvider";
 
 export function ProfileSection() {
   const { user } = useAuth();
-  const { profile, updateProfile } = useBookStore();
+  const { profile, updateProfile, books } = useBookStore();
+  const { sessions } = useReadingSessionLog();
   const { streak } = useReadingStreak();
   const nameRewardClass = getStreakRewardTextClassName(streak);
   const {
@@ -29,9 +37,16 @@ export function ProfileSection() {
     currentYear,
     monthName,
   } = useMetrics();
+  const annualBookRank = getActiveAnnualBookRank(completedThisYear);
+  const wrappedPeriod = useMemo(() => getMostRecentCompletedHalf(), []);
+  const wrappedStats = useMemo(
+    () => computeWrappedStats(sessions, books, wrappedPeriod),
+    [books, sessions, wrappedPeriod],
+  );
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
   const [rankRewardsOpen, setRankRewardsOpen] = useState(false);
+  const [wrappedOpen, setWrappedOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -127,6 +142,14 @@ export function ProfileSection() {
           >
             <Trophy className="h-3 w-3" />
             Rank Rewards
+          </button>
+          <button
+            type="button"
+            onClick={() => setWrappedOpen(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-[#2a1810] px-2 py-0.5 text-[12px] font-semibold text-amber-100 transition-colors hover:bg-[#3a2218]"
+          >
+            <Sparkles className="h-3 w-3" />
+            6-Month Wrapped
           </button>
         </div>
         <button
@@ -258,6 +281,22 @@ export function ProfileSection() {
             </h3>
             <p className="mt-2 max-w-md text-slate-500">{profile.bio}</p>
 
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700">
+                <Flame className="h-4 w-4 shrink-0 text-orange-500" aria-hidden />
+                <span>
+                  <span className="font-semibold">{streak}</span> day streak
+                </span>
+              </span>
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
+                <BookOpen className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                <span className="truncate">{annualBookRank.title}</span>
+                <span className="shrink-0 text-xs font-normal text-amber-700/80">
+                  ({currentYear})
+                </span>
+              </span>
+            </div>
+
             <div className="mt-6">
               <div className="mb-3 flex items-center gap-2">
                 <Target className="h-4 w-4 text-blue-600" />
@@ -291,6 +330,14 @@ export function ProfileSection() {
 
       {rankRewardsOpen && (
         <RankRewardsModal onClose={() => setRankRewardsOpen(false)} />
+      )}
+
+      {wrappedOpen && (
+        <ReadingWrappedModal
+          period={wrappedPeriod}
+          stats={wrappedStats}
+          onClose={() => setWrappedOpen(false)}
+        />
       )}
 
       <div className="mt-8 border-t border-slate-100 pt-6">

@@ -93,19 +93,6 @@ body {
   }
 }
 
-/* Grid card descriptions under covers */
-.book-grid-description-slot {
-  min-width: 0;
-  overflow: hidden;
-  min-height: calc(1.3125rem * 3);
-}
-
-@media (min-width: 768px) {
-  .book-grid-description-slot {
-    min-height: 0;
-  }
-}
-
 .modal-panel {
   transform: scale(1.3);
   transform-origin: center center;
@@ -141,6 +128,267 @@ body {
 @media (min-width: 640px) {
   .modal-panel--reading-session {
     max-height: min(94vh, 54rem);
+  }
+}
+
+/* Shared premium brown surface (Rank Rewards modal, Shelf view) */
+.premium-brown-surface {
+  background-color: #1a0f0a;
+  background-image:
+    radial-gradient(
+      ellipse 90% 60% at 50% 0%,
+      rgba(74, 46, 28, 0.55) 0%,
+      transparent 65%
+    ),
+    linear-gradient(180deg, #2a1810 0%, #1a0f0a 55%, #120906 100%);
+}
+
+/* Rank Rewards modal — brown theme, internal scroll, mobile-friendly width */
+.rank-rewards-modal-panel {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: 92vw;
+  max-width: 92vw;
+  max-height: 88vh;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 215, 160, 0.14);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 215, 160, 0.08);
+  font-family: var(--font-display);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+@media (min-width: 768px) {
+  .rank-rewards-modal-panel {
+    width: 100%;
+    max-width: 36rem;
+    max-height: 90vh;
+  }
+}
+
+.rank-rewards-modal-panel__header {
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 215, 160, 0.1);
+  padding: 0.875rem 1rem 0.75rem;
+}
+
+.rank-rewards-modal-panel__close {
+  display: flex;
+  margin-inline: auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 215, 160, 0.2);
+  background: rgba(26, 15, 10, 0.85);
+  padding: 0.5rem;
+  color: rgba(255, 235, 210, 0.85);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.rank-rewards-modal-panel__close:hover {
+  background: rgba(42, 24, 16, 0.95);
+  color: #fff7ed;
+}
+
+.rank-rewards-modal-panel__scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rank-rewards-section--modal {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 1.25rem;
+}
+
+@media (max-width: 767px) {
+  .rank-rewards-section--modal {
+    padding: 1.3rem;
+    font-size: 1.05rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .rank-rewards-section--modal {
+    padding: 1.5rem;
+  }
+}
+
+.rank-rewards-section--modal .rank-rewards-heading {
+  color: #fff7ed;
+}
+
+.rank-rewards-section--modal .rank-rewards-subheading,
+.rank-rewards-section--modal .rank-rewards-muted {
+  color: rgba(255, 235, 210, 0.72);
+}
+
+.rank-rewards-section--modal .rank-rewards-shield-box {
+  border-color: rgba(125, 211, 252, 0.25);
+  background: rgba(12, 74, 110, 0.22);
+}
+
+.rank-rewards-section--modal .rank-rewards-shield-box--idle {
+  border-color: rgba(255, 215, 160, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.rank-rewards-section--modal .rank-rewards-tier {
+  border-color: rgba(255, 215, 160, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.rank-rewards-section--modal .rank-rewards-tier--active {
+  border-color: rgba(147, 197, 253, 0.35);
+  background: rgba(30, 58, 138, 0.22);
+}
+
+.rank-rewards-section--modal .rank-rewards-tier--unlocked {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rank-rewards-section--modal .rank-rewards-tier-title {
+  color: #fff7ed;
+}
+
+.rank-rewards-section--modal .rank-rewards-annual-card {
+  border-color: rgba(255, 215, 160, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.rank-rewards-section--modal .rank-rewards-annual-card--active {
+  border-color: rgba(147, 197, 253, 0.35);
+  background: rgba(30, 58, 138, 0.22);
+}
+
+.rank-rewards-section--modal .rank-rewards-annual-card--unlocked {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* 6-Month Reading Wrapped — brown shareable recap */
+.reading-wrapped-modal-panel {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: 92vw;
+  max-width: 92vw;
+  max-height: 88vh;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 215, 160, 0.14);
+  background-color: #1a0f0a;
+  background-image:
+    radial-gradient(
+      ellipse 90% 55% at 50% 0%,
+      rgba(74, 46, 28, 0.55) 0%,
+      transparent 65%
+    ),
+    linear-gradient(180deg, #2a1810 0%, #1a0f0a 55%, #120906 100%);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 215, 160, 0.08);
+  font-family: var(--font-display);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+@media (min-width: 768px) {
+  .reading-wrapped-modal-panel {
+    width: 100%;
+    max-width: 40rem;
+    max-height: 90vh;
+  }
+}
+
+.reading-wrapped-modal-panel__header {
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 215, 160, 0.1);
+  padding: 0.875rem 1rem 0.75rem;
+}
+
+.reading-wrapped-modal-panel__close {
+  display: flex;
+  margin-inline: auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 215, 160, 0.2);
+  background: rgba(26, 15, 10, 0.85);
+  padding: 0.5rem;
+  color: rgba(255, 235, 210, 0.85);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.reading-wrapped-modal-panel__close:hover {
+  background: rgba(42, 24, 16, 0.95);
+  color: #fff7ed;
+}
+
+.reading-wrapped-modal-panel__scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reading-wrapped-modal-panel__content {
+  padding: 1.35rem 1.25rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .reading-wrapped-modal-panel__content {
+    padding: 1.5rem 1.5rem 1.75rem;
+  }
+}
+
+.reading-wrapped-eyebrow,
+.reading-wrapped-heading,
+.reading-wrapped-stat-value {
+  color: #fff7ed;
+}
+
+.reading-wrapped-subheading,
+.reading-wrapped-muted,
+.reading-wrapped-footer {
+  color: rgba(255, 235, 210, 0.72);
+}
+
+.reading-wrapped-stat-label {
+  color: rgba(255, 235, 210, 0.62);
+}
+
+.reading-wrapped-stat-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 215, 160, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 1rem 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .reading-wrapped-stat-card {
+    padding: 1.15rem 1.2rem;
   }
 }
 
@@ -536,6 +784,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding-bottom: 2px;
 }
 
+.library-grid-shelf-covers {
+  min-height: 0;
+}
+
+@media (min-width: 640px) {
+  .library-grid-shelf-covers {
+    min-height: 11rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .library-grid-shelf-covers {
+    min-height: 9.5rem;
+  }
+}
+
 .library-grid-shelf-row::before {
   content: "";
   position: absolute;
@@ -643,40 +907,42 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Photorealistic photo bookshelf (2.5D) */
+.photo-bookshelf-shell {
+  border: 1px solid rgba(255, 215, 160, 0.14);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 215, 160, 0.08);
+  color: #fff7ed;
+}
+
+.photo-bookshelf-frame {
+  color: #fff7ed;
+}
+
 .photo-bookshelf-wall {
   position: absolute;
   top: 0;
   bottom: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: #ebe4d6;
+  background-color: #1a0f0a;
   background-image:
-    linear-gradient(
-      to bottom,
-      rgba(255, 253, 248, 0.5) 0%,
-      transparent 18%,
-      transparent 82%,
-      rgba(80, 70, 58, 0.05) 96%,
-      rgba(70, 62, 52, 0.1) 100%
-    ),
     radial-gradient(
-      ellipse 120% 55% at 50% 8%,
-      rgba(255, 252, 245, 0.6) 0%,
-      transparent 62%
+      ellipse 90% 60% at 50% 0%,
+      rgba(74, 46, 28, 0.55) 0%,
+      transparent 65%
     ),
-    url("/bookshelf/wall-texture.jpg");
-  background-size: 100% 100%, 100% 100%, 360px 360px;
-  background-repeat: no-repeat, no-repeat, repeat;
+    linear-gradient(180deg, #2a1810 0%, #1a0f0a 55%, #120906 100%);
 }
 
 .photo-bookshelf-wall--left {
   left: 0;
-  box-shadow: inset -22px 0 36px rgba(55, 48, 40, 0.1);
+  box-shadow: inset -22px 0 36px rgba(0, 0, 0, 0.45);
 }
 
 .photo-bookshelf-wall--right {
   right: 0;
-  box-shadow: inset 22px 0 36px rgba(55, 48, 40, 0.1);
+  box-shadow: inset 22px 0 36px rgba(0, 0, 0, 0.45);
 }
 
 .photo-bookshelf-stage {

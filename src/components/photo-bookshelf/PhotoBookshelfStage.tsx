@@ -129,7 +129,7 @@ export function PhotoBookshelfStage({
   return (
     <div
       ref={containerRef}
-      className="photo-bookshelf-frame relative h-full min-h-0 w-full overflow-hidden bg-white"
+      className="photo-bookshelf-frame premium-brown-surface relative h-full min-h-0 w-full overflow-hidden"
     >
       {gutterLeftPct > 0.25 && (
         <div

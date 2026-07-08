@@ -43,7 +43,7 @@ export function RankRewardsModal({ onClose }: RankRewardsModalProps) {
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 transition-opacity duration-200 sm:items-center sm:p-6 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 sm:p-6 ${
         showContent ? "opacity-100" : "opacity-0"
       }`}
       role="dialog"
@@ -52,37 +52,29 @@ export function RankRewardsModal({ onClose }: RankRewardsModalProps) {
     >
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
         onClick={handleClose}
         aria-label="Close rank rewards"
       />
 
       <div
-        className={`modal-panel modal-panel--xl relative z-10 w-full max-w-[36rem] origin-center transition-all duration-200 ${
-          showContent ? "translate-y-0" : "translate-y-2"
+        className={`rank-rewards-modal-panel premium-brown-surface ${
+          showContent ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
         }`}
       >
-        <div className="mb-2 flex justify-end sm:hidden">
+        <header className="rank-rewards-modal-panel__header">
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full bg-white p-2 text-slate-500 shadow-md"
-            aria-label="Close"
+            className="rank-rewards-modal-panel__close"
+            aria-label="Close rank rewards"
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
+        </header>
 
-        <div className="relative max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl sm:max-h-[85vh]">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="absolute right-4 top-4 z-10 hidden rounded-full bg-white/90 p-1.5 text-slate-500 shadow-sm transition-colors hover:text-slate-800 sm:inline-flex"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <RankRewardsSection />
+        <div className="rank-rewards-modal-panel__scroll">
+          <RankRewardsSection inModal />
         </div>
       </div>
     </div>,

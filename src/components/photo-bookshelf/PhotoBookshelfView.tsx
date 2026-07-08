@@ -15,7 +15,7 @@ interface PhotoBookshelfViewProps {
 }
 
 const SHELL_CLASS =
-  "relative w-full overflow-hidden rounded-xl border border-slate-200 shadow-sm";
+  "photo-bookshelf-shell premium-brown-surface relative w-full overflow-hidden rounded-xl shadow-sm";
 
 /** Photorealistic 2.5D shelf — reference photo backdrop + dynamic book spines. */
 export function PhotoBookshelfView({
@@ -80,10 +80,10 @@ export function PhotoBookshelfView({
     return (
       <div
         ref={shellRef}
-        className={`flex items-center justify-center bg-white ${SHELL_CLASS}`}
+        className={`flex items-center justify-center premium-brown-surface ${SHELL_CLASS}`}
         style={{ height: shellHeight }}
       >
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-600/40 border-t-amber-500" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200/30 border-t-amber-100" />
       </div>
     );
   }
@@ -99,12 +99,12 @@ export function PhotoBookshelfView({
         readOnly={readOnly}
       />
       {!readOnly && (
-        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[12px] text-amber-100/90 backdrop-blur-sm">
+        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-amber-100/15 bg-[#1a0f0a]/80 px-3 py-1 text-[12px] text-[#fff7ed] backdrop-blur-sm">
           Tap a book to select · Tap a shelf to place · Double-tap for details
         </p>
       )}
       {readOnly && (
-        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[12px] text-amber-100/90 backdrop-blur-sm">
+        <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-amber-100/15 bg-[#1a0f0a]/80 px-3 py-1 text-[12px] text-[#fff7ed] backdrop-blur-sm">
           Click a book for details
         </p>
       )}
