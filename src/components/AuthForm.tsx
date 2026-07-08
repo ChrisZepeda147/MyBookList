@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Sparkles } from "lucide-react";
+import { BookOpen, Loader2, Sparkles } from "lucide-react";
 import { safeRedirectPath } from "@/lib/auth-utils";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -107,18 +106,14 @@ export function AuthForm() {
   }
 
   return (
-    <div className="font-display mx-auto w-full">
+    <div className="mx-auto w-full max-w-md">
       <div className="mb-8 text-center">
-        <Image
-          src="/mybooklist-logo.png?v=3"
-          alt=""
-          width={72}
-          height={72}
-          className="mx-auto mb-4 h-[4.5rem] w-[4.5rem] object-contain"
-          unoptimized
-          priority
-        />
-        <h1 className="text-3xl font-extrabold text-blue-800">MyBookList</h1>
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
+          <BookOpen className="h-8 w-8" />
+        </div>
+        <h1 className="font-display text-3xl font-extrabold text-blue-800">
+          MyBookList
+        </h1>
         <p className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-sm text-amber-900/90">
           {isSwapProfiles
             ? "Sign in with a different account to keep reading."
@@ -179,7 +174,7 @@ export function AuthForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="auth-input w-full rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
             placeholder="you@example.com"
           />
         </div>
@@ -198,7 +193,7 @@ export function AuthForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="auth-input w-full rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
             placeholder="••••••••"
           />
         </div>
@@ -218,7 +213,7 @@ export function AuthForm() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="auth-input w-full rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
               placeholder="••••••••"
             />
           </div>

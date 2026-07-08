@@ -110,7 +110,6 @@ export function LibrarySection() {
               key={book.id}
               book={book}
               onSelect={setSelectedBook}
-              clampDescription
             />
           ))}
         </div>
