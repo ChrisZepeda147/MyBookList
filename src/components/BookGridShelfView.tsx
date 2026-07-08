@@ -51,14 +51,16 @@ function CoverOnShelf({
         <button
           type="button"
           onClick={() => onSelect(book)}
-          className="mt-1.5 w-full text-left"
+          className="mt-1.5 w-full min-w-0 text-left"
         >
           <p className="line-clamp-1 text-xs font-medium text-slate-800 sm:text-sm">
             {book.title}
           </p>
-          <p className="mt-0.5 text-xs leading-snug text-slate-500 sm:text-sm">
-            {description}
-          </p>
+          <div className="book-grid-description-slot mt-0.5">
+            <p className="book-description-text line-clamp-3 text-xs leading-snug text-slate-500 md:line-clamp-none sm:text-sm">
+              {description}
+            </p>
+          </div>
         </button>
       )}
     </div>

@@ -79,6 +79,33 @@ body {
   word-break: break-word;
 }
 
+/* List card — reserve 3 lines on mobile so card height stays stable */
+.book-card-description-slot {
+  min-width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  min-height: calc(1.5625rem * 3);
+}
+
+@media (min-width: 768px) {
+  .book-card-description-slot {
+    min-height: 0;
+  }
+}
+
+/* Grid card descriptions under covers */
+.book-grid-description-slot {
+  min-width: 0;
+  overflow: hidden;
+  min-height: calc(1.3125rem * 3);
+}
+
+@media (min-width: 768px) {
+  .book-grid-description-slot {
+    min-height: 0;
+  }
+}
+
 .modal-panel {
   transform: scale(1.3);
   transform-origin: center center;

@@ -14,15 +14,9 @@ import { ensureBookDescription } from "@/lib/book-descriptions";
 interface BookCardProps {
   book: BookEntry;
   onSelect: (book: BookEntry) => void;
-  /** When true, description is capped at 2 lines (MyList library list view). */
-  clampDescription?: boolean;
 }
 
-export function BookCard({
-  book,
-  onSelect,
-  clampDescription = false,
-}: BookCardProps) {
+export function BookCard({ book, onSelect }: BookCardProps) {
   const { setBookStatus, setBookRating, removeBook } = useBookStore();
   const canRate = book.status === "completed";
   const displayDescription = ensureBookDescription(book.description);
@@ -47,7 +41,7 @@ export function BookCard({
         />
       </button>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
@@ -88,15 +82,22 @@ export function BookCard({
           </button>
         </div>
 
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(book)}
-          className={`book-description-text w-full min-w-0 text-left text-sm text-slate-500 ${
-            clampDescription ? "book-description-clamp" : ""
-          }`}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect(book);
+            }
+          }}
+          className="book-card-description-slot w-full cursor-pointer text-left"
         >
-          {displayDescription}
-        </button>
+          <p className="book-description-text line-clamp-3 text-sm text-slate-500 md:line-clamp-none">
+            {displayDescription}
+          </p>
+        </div>
 
         <div
           className="mt-auto flex flex-wrap items-end gap-4"
