@@ -25,7 +25,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLoginPage) {
     return (
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-0 sm:px-6">
+      <main className="flex min-h-[100dvh] w-full flex-1 flex-col">
         {children}
       </main>
     );

@@ -48,18 +48,31 @@ function CoverOnShelf({
         </div>
       </button>
       {showDescriptions && (
-        <button
-          type="button"
-          onClick={() => onSelect(book)}
-          className="mt-1.5 w-full text-left"
-        >
-          <p className="line-clamp-1 text-xs font-medium text-slate-800 sm:text-sm">
-            {book.title}
-          </p>
-          <p className="book-description-clamp mt-0.5 text-xs leading-snug text-slate-500 sm:text-sm">
+        <div className="mt-1.5 w-full min-w-0">
+          <button
+            type="button"
+            onClick={() => onSelect(book)}
+            className="w-full text-left"
+          >
+            <p className="line-clamp-1 text-xs font-medium text-slate-800 sm:text-sm">
+              {book.title}
+            </p>
+          </button>
+          <p
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelect(book)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(book);
+              }
+            }}
+            className="book-description-clamp line-clamp-2 mt-0.5 cursor-pointer text-xs leading-snug text-slate-500 sm:text-sm"
+          >
             {description}
           </p>
-        </button>
+        </div>
       )}
     </div>
   );
