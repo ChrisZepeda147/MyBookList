@@ -79,7 +79,7 @@ export function PhotoBookshelfStage({
   );
 
   const placements = useMemo(() => {
-    return layout.placed
+    return (layout?.placed ?? [])
       .map((p) => {
         const book = bookById.get(p.bookId);
         if (!book) return null;
@@ -92,7 +92,7 @@ export function PhotoBookshelfStage({
       placement: PlacedBook;
       style: NonNullable<ReturnType<typeof spineStyleForPlacement>>;
     }[];
-  }, [layout.placed, bookById]);
+  }, [layout?.placed, bookById]);
 
   const pointerToPct = useCallback((clientX: number, clientY: number) => {
     const el = stageRef.current;

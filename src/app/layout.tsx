@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  width: 1200,
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
@@ -40,15 +40,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${quicksand.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${quicksand.variable} h-full w-full antialiased`}
     >
-      <head>
-        <meta
-          name="viewport"
-          content="width=1200, initial-scale=1, maximum-scale=1"
-        />
-      </head>
-      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
+      <body className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden bg-slate-50 text-slate-900">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

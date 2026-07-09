@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BookEntry } from "@/lib/types";
 import {
   addBookToLayout,
   autoLayoutBooks,
+  EMPTY_SHELF_LAYOUT,
   loadLayout,
   moveBookOnShelf,
+  normalizeShelfLayout,
   pruneLayout,
   saveLayout,
+  seedShelfLayoutFromBooks,
   type ShelfLayoutState,
 } from "@/lib/photo-bookshelf/layout";
 import { createClient } from "@/lib/supabase/client";
@@ -21,9 +24,29 @@ interface UsePhotoBookshelfShelfLayoutOptions {
   persist?: boolean;
 }
 
+const SAVE_DEBOUNCE_MS = 450;
+
+function layoutsEqual(a: ShelfLayoutState, b: ShelfLayoutState): boolean {
+  return (
+    JSON.stringify(normalizeShelfLayout(a).placed) ===
+    JSON.stringify(normalizeShelfLayout(b).placed)
+  );
+}
+
+function resolveDisplayLayout(
+  stored: ShelfLayoutState,
+  books: BookEntry[],
+): ShelfLayoutState {
+  const normalized = normalizeShelfLayout(stored);
+  if (normalized.placed.length === 0) {
+    return seedShelfLayoutFromBooks(books);
+  }
+  return autoLayoutBooks(books, pruneLayout(books, normalized));
+}
+
 /**
- * Shelf-only layout hook. Re-fetches from Supabase on every mount (revalidateOnMount)
- * so mobile stays in sync with desktop rearrangements.
+ * Shelf layout hook — fetches from profiles.shelf_layout once per mount/user.
+ * Drag updates are optimistic; persistence is debounced in the background.
  */
 export function usePhotoBookshelfShelfLayout(
   books: BookEntry[],
@@ -31,123 +54,190 @@ export function usePhotoBookshelfShelfLayout(
   options?: UsePhotoBookshelfShelfLayoutOptions,
 ) {
   const persist = options?.persist ?? true;
-  const [layout, setLayout] = useState<ShelfLayoutState>({ placed: [] });
+  const [layout, setLayout] = useState<ShelfLayoutState>(EMPTY_SHELF_LAYOUT);
   const [hydrated, setHydrated] = useState(false);
+
   const booksRef = useRef(books);
   booksRef.current = books;
 
+  const hasSavedLayoutRef = useRef(false);
+  const fetchGenerationRef = useRef(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingLayoutRef = useRef<ShelfLayoutState | null>(null);
+
+  const bookIdsKey = useMemo(
+    () => books.map((book) => book.id).join("|"),
+    [books],
+  );
+
+  const scheduleBackgroundSave = useCallback(
+    (nextLayout: ShelfLayoutState) => {
+      if (!userId || !persist) return;
+
+      const safeLayout = normalizeShelfLayout(nextLayout);
+      saveLayout(safeLayout, userId);
+      pendingLayoutRef.current = safeLayout;
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+
+      saveTimerRef.current = setTimeout(() => {
+        const layoutToSave = pendingLayoutRef.current;
+        if (!layoutToSave || !userId) return;
+
+        const supabase = createClient();
+        if (!supabase) return;
+
+        void saveShelfLayout(supabase, userId, layoutToSave).then((saved) => {
+          if (saved) {
+            hasSavedLayoutRef.current = true;
+          }
+        });
+      }, SAVE_DEBOUNCE_MS);
+    },
+    [persist, userId],
+  );
+
+  // Mount-only fetch: runs when userId/persist changes — never when books update.
   useEffect(() => {
+    fetchGenerationRef.current += 1;
+    const generation = fetchGenerationRef.current;
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    pendingLayoutRef.current = null;
+    hasSavedLayoutRef.current = false;
+
     if (!userId) {
-      setLayout({ placed: [] });
+      setLayout(EMPTY_SHELF_LAYOUT);
       setHydrated(false);
       return;
     }
 
-    let cancelled = false;
     setHydrated(false);
+    setLayout(EMPTY_SHELF_LAYOUT);
 
     void (async () => {
       const currentBooks = booksRef.current;
-      let stored: ShelfLayoutState | null = null;
+      let stored = EMPTY_SHELF_LAYOUT;
 
       const supabase = createClient();
       if (supabase) {
         try {
-          stored = await fetchShelfLayout(supabase, userId);
-          if (stored && persist) {
-            saveLayout(stored, userId);
+          stored = normalizeShelfLayout(await fetchShelfLayout(supabase, userId));
+          if (stored.placed.length > 0) {
+            hasSavedLayoutRef.current = true;
+            if (persist) {
+              saveLayout(stored, userId);
+            }
           }
         } catch (err) {
-          console.error(
-            "[usePhotoBookshelfShelfLayout] Failed to fetch shelf layout:",
+          console.warn(
+            "[usePhotoBookshelfShelfLayout] Fetch failed — using defaults:",
             err,
           );
         }
       }
 
-      if (!stored || stored.placed.length === 0) {
-        const local = loadLayout(currentBooks, userId);
+      if (stored.placed.length === 0) {
+        const local = normalizeShelfLayout(loadLayout(currentBooks, userId));
         if (local.placed.length > 0) {
           stored = local;
+          hasSavedLayoutRef.current = true;
           if (persist && supabase) {
-            void saveShelfLayout(supabase, userId, local).catch((err) => {
-              console.error(
-                "[usePhotoBookshelfShelfLayout] Failed to migrate shelf layout:",
-                err,
-              );
-            });
+            void saveShelfLayout(supabase, userId, local);
           }
         }
       }
 
-      if (!stored) {
-        stored = { placed: [] };
-      }
+      if (generation !== fetchGenerationRef.current) return;
 
-      if (cancelled) return;
-
-      setLayout(
-        autoLayoutBooks(currentBooks, pruneLayout(currentBooks, stored)),
-      );
+      setLayout(resolveDisplayLayout(stored, currentBooks));
       setHydrated(true);
     })();
 
     return () => {
-      cancelled = true;
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
     };
   }, [userId, persist]);
 
+  // Merge newly added books locally — no refetch, no automatic remote save.
   useEffect(() => {
     if (!hydrated || !userId) return;
-    setLayout((prev) =>
-      autoLayoutBooks(books, pruneLayout(books, prev)),
-    );
-  }, [books, hydrated, userId]);
 
-  useEffect(() => {
-    if (!hydrated || !userId || !persist) return;
-
-    saveLayout(layout, userId);
-
-    const supabase = createClient();
-    if (!supabase) return;
-
-    void saveShelfLayout(supabase, userId, layout).catch((err) => {
-      console.error(
-        "[usePhotoBookshelfShelfLayout] Failed to save shelf layout:",
-        err,
+    setLayout((prev) => {
+      const next = autoLayoutBooks(
+        booksRef.current,
+        pruneLayout(booksRef.current, prev),
       );
+      return layoutsEqual(prev, next) ? prev : next;
     });
-  }, [layout, hydrated, userId, persist]);
+  }, [bookIdsKey, hydrated, userId]);
 
   const moveBook = useCallback(
     (bookId: string, row: number, xPct: number) => {
-      setLayout((prev) =>
-        moveBookOnShelf(booksRef.current, prev, bookId, row, xPct),
-      );
+      setLayout((prev) => {
+        const seeded =
+          (prev.placed?.length ?? 0) > 0
+            ? prev
+            : seedShelfLayoutFromBooks(booksRef.current);
+
+        const next = moveBookOnShelf(
+          booksRef.current,
+          seeded,
+          bookId,
+          row,
+          xPct,
+        );
+
+        if (!layoutsEqual(seeded, next)) {
+          scheduleBackgroundSave(next);
+        }
+
+        return next;
+      });
     },
-    [],
+    [scheduleBackgroundSave],
   );
 
   const addBook = useCallback(
     (bookId: string) => {
-      setLayout((prev) =>
-        addBookToLayout(booksRef.current, prev, bookId),
-      );
+      setLayout((prev) => {
+        const next = addBookToLayout(booksRef.current, prev, bookId);
+        if (hasSavedLayoutRef.current && !layoutsEqual(prev, next)) {
+          scheduleBackgroundSave(next);
+        }
+        return next;
+      });
     },
-    [],
+    [scheduleBackgroundSave],
   );
 
-  const removeFromShelf = useCallback((bookId: string) => {
-    setLayout((prev) => ({
-      placed: prev.placed.filter((p) => p.bookId !== bookId),
-    }));
-  }, []);
+  const removeFromShelf = useCallback(
+    (bookId: string) => {
+      setLayout((prev) => {
+        const next = {
+          placed: (prev.placed ?? []).filter((p) => p.bookId !== bookId),
+        };
+        if (hasSavedLayoutRef.current && !layoutsEqual(prev, next)) {
+          scheduleBackgroundSave(next);
+        }
+        return next;
+      });
+    },
+    [scheduleBackgroundSave],
+  );
 
-  const placedIds = new Set(layout.placed.map((p) => p.bookId));
+  const placedIds = new Set((layout.placed ?? []).map((p) => p.bookId));
 
   return {
-    layout,
+    layout: normalizeShelfLayout(layout),
     hydrated,
     placedIds,
     addBook,

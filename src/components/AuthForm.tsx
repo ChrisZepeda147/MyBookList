@@ -106,7 +106,7 @@ export function AuthForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full min-w-0 max-w-md">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
           <BookOpen className="h-8 w-8" />

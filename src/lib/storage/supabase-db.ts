@@ -4,6 +4,10 @@ import { DEFAULT_PROFILE } from "@/lib/types";
 import { resolveBookCategoryTags } from "@/lib/categories";
 import type { ShelfLayoutState } from "@/lib/photo-bookshelf/layout";
 import {
+  EMPTY_SHELF_LAYOUT,
+  normalizeShelfLayout,
+} from "@/lib/photo-bookshelf/layout";
+import {
   bookEntryToInsert,
   bookRowToEntry,
   bookUpdatesToRow,
@@ -81,42 +85,71 @@ export async function fetchBooks(
   return ((data ?? []) as BookRow[]).map(bookRowToEntry);
 }
 
-function parseShelfLayout(value: unknown): ShelfLayoutState | null {
-  if (!value || typeof value !== "object") return null;
-  const placed = (value as ShelfLayoutState).placed;
-  if (!Array.isArray(placed)) return null;
-  return { placed };
+function parseShelfLayout(value: unknown): ShelfLayoutState {
+  if (!value || typeof value !== "object") return EMPTY_SHELF_LAYOUT;
+  return normalizeShelfLayout(value as ShelfLayoutState);
 }
 
-/** Fresh shelf layout from the database (used by the Shelf view on mount). */
+function isShelfLayoutSchemaError(error: { code?: string; message?: string }): boolean {
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    message.includes("shelf_layout") ||
+    message.includes("column") ||
+    message.includes("schema cache")
+  );
+}
+
+/** Fresh shelf layout from profiles.shelf_layout (ordered book placements). */
 export async function fetchShelfLayout(
   supabase: SupabaseClient,
   userId: string,
-): Promise<ShelfLayoutState | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("shelf_layout")
-    .eq("id", userId)
-    .maybeSingle();
+): Promise<ShelfLayoutState> {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("shelf_layout")
+      .eq("id", userId)
+      .maybeSingle();
 
-  if (error) throw error;
-  return parseShelfLayout(data?.shelf_layout);
+    if (error) {
+      console.warn("[fetchShelfLayout] Using default layout:", error.message);
+      return EMPTY_SHELF_LAYOUT;
+    }
+
+    return parseShelfLayout(data?.shelf_layout);
+  } catch (err) {
+    console.warn("[fetchShelfLayout] Using default layout:", err);
+    return EMPTY_SHELF_LAYOUT;
+  }
 }
 
 export async function saveShelfLayout(
   supabase: SupabaseClient,
   userId: string,
   layout: ShelfLayoutState,
-): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      shelf_layout: layout,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId);
+): Promise<boolean> {
+  try {
+    const safeLayout = normalizeShelfLayout(layout);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        shelf_layout: safeLayout,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
 
-  if (error) throw error;
+    if (error) {
+      console.warn("[saveShelfLayout] Could not persist layout:", error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn("[saveShelfLayout] Could not persist layout:", err);
+    return false;
+  }
 }
 
 export async function insertBook(

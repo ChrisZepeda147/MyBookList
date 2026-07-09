@@ -38,6 +38,41 @@ export interface ShelfLayoutState {
   placed: PlacedBook[];
 }
 
+export const EMPTY_SHELF_LAYOUT: ShelfLayoutState = { placed: [] };
+
+function isValidPlacedBook(value: unknown): value is PlacedBook {
+  if (!value || typeof value !== "object") return false;
+  const placement = value as PlacedBook;
+  return (
+    typeof placement.bookId === "string" &&
+    Number.isFinite(placement.row) &&
+    Number.isFinite(placement.xPct) &&
+    Number.isFinite(placement.tilt)
+  );
+}
+
+/** Coerce unknown / partial DB values into a safe layout object. */
+export function normalizeShelfLayout(
+  value: ShelfLayoutState | null | undefined,
+): ShelfLayoutState {
+  const placed = value?.placed;
+  if (!Array.isArray(placed)) return { placed: [] };
+  return { placed: placed.filter(isValidPlacedBook) };
+}
+
+/** Default shelf ordering — newest additions first (matches library list). */
+export function booksInDefaultShelfOrder(books: BookEntry[]): BookEntry[] {
+  return [...books].sort(
+    (a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(),
+  );
+}
+
+export function hasSavedShelfPositions(
+  layout: ShelfLayoutState | null | undefined,
+): boolean {
+  return normalizeShelfLayout(layout).placed.length > 0;
+}
+
 export interface SpinePlacementStyle {
   leftPct: number;
   bottomPct: number;
@@ -205,10 +240,12 @@ export function autoLayoutBooks(
   books: BookEntry[],
   existing: ShelfLayoutState,
 ): ShelfLayoutState {
-  const placed = [...existing.placed];
+  const safeExisting = normalizeShelfLayout(existing);
+  const placed = [...safeExisting.placed];
   const placedIds = new Set(placed.map((p) => p.bookId));
+  const orderedBooks = booksInDefaultShelfOrder(books);
 
-  for (const book of books) {
+  for (const book of orderedBooks) {
     if (placedIds.has(book.id)) continue;
     const placement = autoPlaceNextToOthers(book, placed, books);
     if (!placement) continue;
@@ -219,15 +256,21 @@ export function autoLayoutBooks(
   return { placed };
 }
 
+/** Build a first-time layout from the standard book order (no DB positions yet). */
+export function seedShelfLayoutFromBooks(books: BookEntry[]): ShelfLayoutState {
+  return autoLayoutBooks(booksInDefaultShelfOrder(books), EMPTY_SHELF_LAYOUT);
+}
+
 export function addBookToLayout(
   books: BookEntry[],
   layout: ShelfLayoutState,
   bookId: string,
 ): ShelfLayoutState {
-  if (layout.placed.some((p) => p.bookId === bookId)) return layout;
+  const safeLayout = normalizeShelfLayout(layout);
+  if (safeLayout.placed.some((p) => p.bookId === bookId)) return safeLayout;
   const book = books.find((b) => b.id === bookId);
-  if (!book) return layout;
-  return autoLayoutBooks([book], layout);
+  if (!book) return safeLayout;
+  return autoLayoutBooks([book], safeLayout);
 }
 
 export function pruneLayout(
@@ -235,7 +278,8 @@ export function pruneLayout(
   layout: ShelfLayoutState,
 ): ShelfLayoutState {
   const bookIds = new Set(books.map((b) => b.id));
-  return { placed: layout.placed.filter((p) => bookIds.has(p.bookId)) };
+  const placed = normalizeShelfLayout(layout).placed;
+  return { placed: placed.filter((p) => bookIds.has(p.bookId)) };
 }
 
 /** Manual drag — drop where you point; nudge only if blocked or overlapping. */
@@ -246,10 +290,11 @@ export function moveBookOnShelf(
   row: number,
   preferredXPct: number,
 ): ShelfLayoutState {
+  const safeLayout = normalizeShelfLayout(layout);
   const book = books.find((b) => b.id === bookId);
-  if (!book || row < 0 || row >= SHELF_ROW_LINES.length) return layout;
+  if (!book || row < 0 || row >= SHELF_ROW_LINES.length) return safeLayout;
 
-  const without = layout.placed.filter((p) => p.bookId !== bookId);
+  const without = safeLayout.placed.filter((p) => p.bookId !== bookId);
   const xPct = resolvePlacementX(
     row,
     preferredXPct,
@@ -258,7 +303,7 @@ export function moveBookOnShelf(
     books,
     bookId,
   );
-  if (xPct == null) return layout;
+  if (xPct == null) return safeLayout;
 
   return {
     placed: [
@@ -359,30 +404,33 @@ function migrateLegacyPlacement(
 }
 
 export function loadLayout(books: BookEntry[], userId: string): ShelfLayoutState {
-  if (typeof window === "undefined" || !userId) return { placed: [] };
+  if (typeof window === "undefined" || !userId) return EMPTY_SHELF_LAYOUT;
 
   const keys = [layoutStorageKey(userId), LAYOUT_STORAGE_KEY, ...LEGACY_KEYS];
   for (const key of keys) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
-      const parsed = JSON.parse(raw) as { placed: LegacyPlacedBook[] };
-      if (!Array.isArray(parsed.placed)) continue;
+      const parsed = JSON.parse(raw) as { placed?: LegacyPlacedBook[] };
+      if (!Array.isArray(parsed?.placed)) continue;
 
       const placed = parsed.placed
         .map((p) => migrateLegacyPlacement(p, books))
         .filter((p): p is PlacedBook => p !== null);
 
-      return { placed };
+      return normalizeShelfLayout({ placed });
     } catch {
       continue;
     }
   }
 
-  return { placed: [] };
+  return EMPTY_SHELF_LAYOUT;
 }
 
 export function saveLayout(layout: ShelfLayoutState, userId: string): void {
   if (typeof window === "undefined" || !userId) return;
-  localStorage.setItem(layoutStorageKey(userId), JSON.stringify(layout));
+  localStorage.setItem(
+    layoutStorageKey(userId),
+    JSON.stringify(normalizeShelfLayout(layout)),
+  );
 }
