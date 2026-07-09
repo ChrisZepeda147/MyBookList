@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, Check, Lock } from "lucide-react";
+import { Check, Lock } from "lucide-react";
+import { MyBookListLogo } from "@/components/MyBookListLogo";
 import {
   ANNUAL_BOOK_RANKS,
   getActiveAnnualBookRank,
@@ -31,7 +32,10 @@ export function AnnualBookCountTrack({ inModal = false }: AnnualBookCountTrackPr
               : "h-9 w-9 bg-amber-50 text-amber-600"
           }`}
         >
-          <BookOpen className={inModal ? "h-5 w-5" : "h-4 w-4"} />
+          <MyBookListLogo
+            size={inModal ? 20 : 16}
+            className={inModal ? "h-5 w-5" : "h-4 w-4"}
+          />
         </div>
         <div className="min-w-0">
           <h3

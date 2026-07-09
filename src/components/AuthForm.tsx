@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { MyBookListLogo } from "@/components/MyBookListLogo";
 import { safeRedirectPath } from "@/lib/auth-utils";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -109,7 +110,11 @@ export function AuthForm() {
     <div className="mx-auto w-full min-w-0 max-w-md">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
-          <BookOpen className="h-8 w-8" />
+          <MyBookListLogo
+            size={32}
+            className="h-8 w-8 brightness-0 invert"
+            priority
+          />
         </div>
         <h1 className="font-display text-3xl font-extrabold text-blue-800">
           MyBookList

@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Flame, Pencil, Save, Sparkles, Target, Trophy, LogOut } from "lucide-react";
+import { Flame, Pencil, Save, Sparkles, Target, Trophy, LogOut } from "lucide-react";
+import { MyBookListLogo } from "@/components/MyBookListLogo";
 import { getActiveAnnualBookRank } from "@/lib/annual-book-ranks";
 import {
   computeWrappedStats,
@@ -289,7 +290,7 @@ export function ProfileSection() {
                 </span>
               </span>
               <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
-                <BookOpen className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                <MyBookListLogo size={16} className="h-4 w-4" aria-hidden />
                 <span className="truncate">{annualBookRank.title}</span>
                 <span className="shrink-0 text-xs font-normal text-amber-700/80">
                   ({currentYear})

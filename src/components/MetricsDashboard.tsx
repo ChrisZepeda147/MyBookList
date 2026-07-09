@@ -33,7 +33,7 @@ export function MetricsDashboard() {
       value: totalRead,
       detail: "All time",
       icon: BookOpen,
-      iconClass: "text-blue-600",
+      emblemClass: "text-blue-600",
       bgClass: "bg-blue-50",
     },
     {
@@ -41,15 +41,15 @@ export function MetricsDashboard() {
       value: completedThisYear,
       detail: `Goal: ${readingGoal}`,
       icon: BookOpen,
-      iconClass: "text-emerald-600",
-      bgClass: "bg-emerald-50",
+      emblemClass: "text-red-600",
+      bgClass: "bg-red-50",
     },
     {
       label: "Pages read",
       value: totalPagesRead.toLocaleString(),
       detail: "All time",
       icon: BookOpen,
-      iconClass: "text-indigo-600",
+      emblemClass: "text-indigo-600",
       bgClass: "bg-indigo-50",
     },
     {
@@ -60,10 +60,10 @@ export function MetricsDashboard() {
           ? `From ${timedSessionCount} timed ${timedSessionCount === 1 ? "session" : "sessions"}`
           : "Timed sessions only",
       icon: Gauge,
-      iconClass: "text-emerald-600",
+      emblemClass: "text-emerald-600",
       bgClass: "bg-emerald-50",
     },
-  ];
+  ] as const;
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -75,13 +75,13 @@ export function MetricsDashboard() {
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ label, value, detail, icon: Icon, iconClass, bgClass }) => (
+        {stats.map(({ label, value, detail, icon: Icon, emblemClass, bgClass }) => (
           <div
             key={label}
             className="rounded-xl border border-slate-50 p-4 transition-shadow hover:shadow-md"
           >
             <div className={`mb-3 inline-flex rounded-lg p-2 ${bgClass}`}>
-              <Icon className={`h-5 w-5 ${iconClass}`} />
+              <Icon className={`h-5 w-5 ${emblemClass}`} />
             </div>
             <p className="text-2xl font-bold text-slate-900">{value}</p>
             <p className="text-sm font-medium text-slate-700">{label}</p>
