@@ -10,6 +10,7 @@ import {
   persistActiveReadingSession,
 } from "@/lib/reading-session-ui";
 import { ReadingSessionStopPrompt } from "@/components/ReadingSessionStopPrompt";
+import { ReadingSessionCancelPrompt } from "@/components/ReadingSessionCancelPrompt";
 
 export interface ReadingSessionCompletePayload {
   elapsedMs: number;
@@ -46,6 +47,7 @@ export function ReadingSessionView({
 }: ReadingSessionViewProps) {
   const [mounted, setMounted] = useState(false);
   const [showStopPrompt, setShowStopPrompt] = useState(false);
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
   const [pendingElapsedMs, setPendingElapsedMs] = useState(0);
   const [pendingStartPage, setPendingStartPage] = useState(1);
 
@@ -126,7 +128,7 @@ export function ReadingSessionView({
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key !== "Escape" || showStopPrompt) return;
+      if (e.key !== "Escape" || showStopPrompt || showCancelPrompt) return;
       if (isRunning) {
         handlePauseAndPersist();
         persistSessionActive();
@@ -149,10 +151,11 @@ export function ReadingSessionView({
     onBack,
     persistSessionActive,
     showStopPrompt,
+    showCancelPrompt,
   ]);
 
   function handleBack() {
-    if (showStopPrompt) return;
+    if (showStopPrompt || showCancelPrompt) return;
     if (isRunning) {
       handlePauseAndPersist();
       persistSessionActive();
@@ -191,7 +194,16 @@ export function ReadingSessionView({
   }
 
   function handleCancelSessionClick() {
-    if (showStopPrompt) return;
+    if (showStopPrompt || showCancelPrompt) return;
+    setShowCancelPrompt(true);
+  }
+
+  function handleDismissCancelPrompt() {
+    setShowCancelPrompt(false);
+  }
+
+  function handleConfirmCancelSession() {
+    setShowCancelPrompt(false);
     handleCancelSession();
     clearReadingSessionUiState();
     onSessionCancel?.();
@@ -337,6 +349,13 @@ export function ReadingSessionView({
           defaultEndPage={Math.max(pendingStartPage, defaultStartPage)}
           onConfirm={handleConfirmStop}
           onCancel={handleCancelStop}
+        />
+      )}
+      {showCancelPrompt && (
+        <ReadingSessionCancelPrompt
+          bookTitle={bookTitle}
+          onConfirm={handleConfirmCancelSession}
+          onDismiss={handleDismissCancelPrompt}
         />
       )}
     </>

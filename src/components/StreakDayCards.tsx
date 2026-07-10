@@ -10,6 +10,7 @@ import {
   shiftStreakWindowStart,
   streakRankLabel,
 } from "@/lib/reading-streak";
+import { useBookStore } from "@/providers/BookStoreProvider";
 import { StreakStyleCard } from "@/components/StreakStyleCard";
 
 interface StreakDayCardsProps {
@@ -17,6 +18,7 @@ interface StreakDayCardsProps {
 }
 
 export function StreakDayCards({ streak }: StreakDayCardsProps) {
+  const { profile } = useBookStore();
   const [windowStart, setWindowStart] = useState(() =>
     getDefaultStreakWindowStart(streak),
   );
@@ -26,8 +28,31 @@ export function StreakDayCards({ streak }: StreakDayCardsProps) {
   }, [streak]);
 
   const visibleDays = getStreakWindowDays(windowStart);
-  const rankLabel = streakRankLabel(streak);
-  const activeStyle = getStreakStyle(streak);
+  const rankLabel = streakRankLabel(streak, profile.streakStyleId);
+  const activeStyle = getStreakStyle(streak, profile.streakStyleId);
+
+  function rankLabelClassFor(styleId: string, kind: string): string {
+    switch (styleId) {
+      case "aurora":
+        return "streak-rank-label-aurora";
+      case "ember":
+        return "streak-rank-label-ember";
+      case "solar":
+        return "streak-rank-label-solar";
+      case "nebula":
+        return "streak-rank-label-nebula";
+      case "prism":
+      case "cosmic":
+        return "streak-rank-label-premium";
+      default:
+        return kind === "solid" ? "" : "streak-rank-label-premium";
+    }
+  }
+
+  const rankLabelClass =
+    activeStyle.kind === "solid"
+      ? rankLabelClassFor(activeStyle.id, activeStyle.kind) || "text-slate-400"
+      : rankLabelClassFor(activeStyle.id, activeStyle.kind) || "text-slate-400";
 
   function goToPreviousPage() {
     setWindowStart((start) => shiftStreakWindowStart(start, -1));
@@ -36,15 +61,6 @@ export function StreakDayCards({ streak }: StreakDayCardsProps) {
   function goToNextPage() {
     setWindowStart((start) => shiftStreakWindowStart(start, 1));
   }
-
-  const rankLabelClass =
-    activeStyle.id === "aurora"
-      ? "streak-rank-label-aurora"
-      : activeStyle.id === "ember"
-        ? "streak-rank-label-ember"
-        : activeStyle.kind === "gradient" || activeStyle.kind === "legendary"
-          ? "streak-rank-label-premium"
-          : "text-slate-400";
 
   return (
     <div className="space-y-4">

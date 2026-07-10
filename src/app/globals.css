@@ -453,7 +453,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   animation: streak-star-pulse 2.5s ease-in-out infinite;
 }
 
-/* Days 5–9 — Ember (red to emerald) */
+/* Days 3–5 — Ember (red to emerald) */
 .streak-ember-card {
   background: linear-gradient(135deg, #dc2626 0%, #ca8a04 42%, #059669 100%);
   color: #ffffff;
@@ -465,11 +465,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .streak-fire-ember {
-  animation: streak-fire-ember 2.8s ease-in-out infinite;
+  animation: streak-fire-ember 4.5s ease-in-out infinite;
 }
 
 .streak-star-ember {
-  animation: streak-fire-ember 2.8s ease-in-out infinite;
+  animation: streak-fire-ember 4.5s ease-in-out infinite;
 }
 
 @keyframes streak-fire-ember {
@@ -482,7 +482,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 }
 
-/* Days 10–14 — Prism gradient tier */
+/* Days 6–9 — Prism gradient tier */
 .streak-gradient-card {
   background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
   color: #ffffff;
@@ -494,11 +494,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .streak-fire-gradient {
-  animation: streak-fire-gradient 3s ease-in-out infinite;
+  animation: streak-fire-gradient 5s ease-in-out infinite;
 }
 
 .streak-star-gradient {
-  animation: streak-fire-gradient 3s ease-in-out infinite;
+  animation: streak-fire-gradient 5s ease-in-out infinite;
 }
 
 @keyframes streak-fire-gradient {
@@ -561,6 +561,51 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: transparent;
 }
 
+.streak-reward-text--solar {
+  background: linear-gradient(135deg, #fbbf24, #f97316, #ef4444, #ec4899);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-solar-shift 3.5s ease-in-out infinite;
+}
+
+.streak-reward-text--nebula {
+  background: linear-gradient(
+    135deg,
+    #312e81,
+    #7c3aed,
+    #ec4899,
+    #06b6d4,
+    #a855f7
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-nebula-shift 5s ease-in-out infinite;
+}
+
+@keyframes streak-reward-solar-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes streak-reward-nebula-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @keyframes streak-reward-aurora-shift {
   0% {
     background-position: 0% 50%;
@@ -594,6 +639,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
   animation: streak-reward-aurora-shift 4s linear infinite;
 }
 
+.streak-rank-label-solar {
+  background: linear-gradient(135deg, #fbbf24, #f97316, #ef4444);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-solar-shift 3.5s ease-in-out infinite;
+}
+
+.streak-rank-label-nebula {
+  background: linear-gradient(135deg, #7c3aed, #ec4899, #06b6d4);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: streak-reward-nebula-shift 5s ease-in-out infinite;
+}
+
 .streak-count-text {
   color: #f8fafc;
   font-weight: 700;
@@ -603,7 +666,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-/* Days 15–20 — Aurora rainbow tier */
+/* Days 10–14 — Aurora rainbow tier */
 .streak-aurora-card {
   background: linear-gradient(
     135deg,
@@ -626,11 +689,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .streak-fire-aurora {
-  animation: streak-fire-aurora 4s ease-in-out infinite;
+  animation: streak-fire-aurora 6.5s ease-in-out infinite;
 }
 
 .streak-star-aurora {
-  animation: streak-fire-aurora 4s ease-in-out infinite;
+  animation: streak-fire-aurora 6.5s ease-in-out infinite;
 }
 
 @keyframes streak-aurora-shift {
@@ -662,7 +725,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 }
 
-/* Days 21+ — Legendary sparkle tier */
+/* Days 15–20 — Cosmic sparkle tier */
 .streak-legendary-card {
   background: linear-gradient(
     135deg,
@@ -695,12 +758,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .streak-fire-legendary {
-  animation: streak-fire-legendary 4s ease-in-out infinite;
+  animation: streak-fire-legendary 6.5s ease-in-out infinite;
   filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.5));
 }
 
 .streak-star-legendary {
-  animation: streak-fire-legendary 4s ease-in-out infinite;
+  animation: streak-fire-legendary 6.5s ease-in-out infinite;
   filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.45));
 }
 
@@ -739,6 +802,128 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   75% {
     color: #fbbf24;
+  }
+}
+
+/* Days 21–24 — Solar Flare tier */
+.streak-solar-card {
+  background: linear-gradient(
+    135deg,
+    #fbbf24 0%,
+    #f97316 28%,
+    #ef4444 58%,
+    #ec4899 85%,
+    #fbbf24 100%
+  );
+  background-size: 220% 220%;
+  animation: streak-solar-shift 4s ease infinite;
+  color: #ffffff;
+}
+
+.streak-solar-card-muted {
+  background: linear-gradient(135deg, #fef3c7 0%, #ffedd5 40%, #fecaca 75%, #fce7f3 100%);
+  color: #c2410c;
+}
+
+.streak-fire-solar {
+  animation: streak-fire-solar 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.55));
+}
+
+.streak-star-solar {
+  animation: streak-fire-solar 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.5));
+}
+
+@keyframes streak-solar-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes streak-fire-solar {
+  0%,
+  100% {
+    color: #fbbf24;
+  }
+  33% {
+    color: #f97316;
+  }
+  66% {
+    color: #ef4444;
+  }
+}
+
+/* Days 25–29 — Nebula Dream tier */
+.streak-nebula-card {
+  background: linear-gradient(
+    135deg,
+    #1e1b4b 0%,
+    #4c1d95 22%,
+    #7c3aed 42%,
+    #ec4899 62%,
+    #06b6d4 82%,
+    #312e81 100%
+  );
+  background-size: 280% 280%;
+  animation: streak-nebula-shift 6s ease infinite;
+  color: #ffffff;
+}
+
+.streak-nebula-card-muted {
+  background: linear-gradient(135deg, #ede9fe 0%, #fae8ff 35%, #cffafe 70%, #e0e7ff 100%);
+  color: #6d28d9;
+}
+
+.streak-nebula-sparkle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 35%, rgba(236, 72, 153, 0.5) 0%, transparent 45%),
+    radial-gradient(circle at 72% 58%, rgba(6, 182, 212, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 48% 18%, rgba(168, 85, 247, 0.35) 0%, transparent 35%);
+  animation: streak-sparkle 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.streak-fire-nebula {
+  animation: streak-fire-nebula 7s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.55));
+}
+
+.streak-star-nebula {
+  animation: streak-fire-nebula 7s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.5));
+}
+
+@keyframes streak-nebula-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes streak-fire-nebula {
+  0%,
+  100% {
+    color: #a855f7;
+  }
+  25% {
+    color: #ec4899;
+  }
+  50% {
+    color: #06b6d4;
+  }
+  75% {
+    color: #e879f9;
   }
 }
 

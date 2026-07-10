@@ -57,7 +57,15 @@ function getStarIconClass(style: StreakRankStyle): string | undefined {
   if (style.fireClass === "streak-fire-gradient") return "streak-star-gradient";
   if (style.fireClass === "streak-fire-aurora") return "streak-star-aurora";
   if (style.fireClass === "streak-fire-legendary") return "streak-star-legendary";
+  if (style.fireClass === "streak-fire-solar") return "streak-star-solar";
+  if (style.fireClass === "streak-fire-nebula") return "streak-star-nebula";
   return undefined;
+}
+
+function legendarySparkleClass(style: StreakRankStyle, isMuted: boolean): string {
+  if (isMuted || style.kind !== "legendary") return "";
+  if (style.id === "nebula") return "streak-nebula-sparkle";
+  return "streak-legendary-sparkle";
 }
 
 function neutralBoxClasses(state: StreakDayCardState) {
@@ -209,7 +217,7 @@ export function StreakStyleCard({
     const cardClass = isMuted ? style.cardMutedClass : style.cardClass;
     return (
       <div
-        className={`relative flex flex-1 flex-col items-center justify-between overflow-hidden ${cardClass ?? ""} ${cardSizeClasses(compact, state)} ${style.kind === "legendary" && !isMuted ? "streak-legendary-sparkle" : ""}`}
+        className={`relative flex flex-1 flex-col items-center justify-between overflow-hidden ${cardClass ?? ""} ${cardSizeClasses(compact, state)} ${legendarySparkleClass(style, isMuted)}`}
       >
         <StreakStyleStar
           dayIndex={dayIndex}
@@ -323,7 +331,7 @@ export function StreakStyleSwatch({
   if (style.kind === "gradient" || style.kind === "legendary") {
     return (
       <div
-        className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl ${style.cardClass ?? ""} ${style.kind === "legendary" ? "streak-legendary-sparkle" : ""}`}
+        className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl ${style.cardClass ?? ""} ${legendarySparkleClass(style, false)}`}
       >
         <StreakStyleFire dayIndex={dayIndex} className={STREAK_FLAME_SIZE.swatchLg} />
       </div>

@@ -21,8 +21,6 @@ export interface WrappedStats {
   sessionCount: number;
 }
 
-const WRAPPED_SEEN_PREFIX = "reading_wrapped_seen_";
-
 function periodBounds(year: number, half: WrappedHalf): { start: Date; end: Date } {
   if (half === "H1") {
     return {
@@ -63,44 +61,6 @@ export function getMostRecentCompletedHalf(now = new Date()): WrappedPeriod {
     return buildWrappedPeriod(year, "H1");
   }
   return buildWrappedPeriod(year - 1, "H2");
-}
-
-/** Period revealed automatically on January 1 and July 1. */
-export function getAutoRevealPeriod(now = new Date()): WrappedPeriod | null {
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  if (month === 0) return buildWrappedPeriod(year - 1, "H2");
-  if (month === 6) return buildWrappedPeriod(year, "H1");
-  return null;
-}
-
-function wrappedSeenKey(userId: string, periodId: string): string {
-  return `${WRAPPED_SEEN_PREFIX}${userId}_${periodId}`;
-}
-
-export function hasSeenWrapped(userId: string, periodId: string): boolean {
-  if (typeof window === "undefined" || !userId) return true;
-  try {
-    return localStorage.getItem(wrappedSeenKey(userId, periodId)) === "1";
-  } catch {
-    return true;
-  }
-}
-
-export function markWrappedSeen(userId: string, periodId: string): void {
-  if (typeof window === "undefined" || !userId) return;
-  try {
-    localStorage.setItem(wrappedSeenKey(userId, periodId), "1");
-  } catch {
-    // Ignore quota errors.
-  }
-}
-
-export function shouldAutoShowWrapped(userId: string, now = new Date()): WrappedPeriod | null {
-  const period = getAutoRevealPeriod(now);
-  if (!period || !userId) return null;
-  if (hasSeenWrapped(userId, period.id)) return null;
-  return period;
 }
 
 function sessionTimestamp(session: ReadingSessionLogEntry): number {

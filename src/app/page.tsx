@@ -14,7 +14,10 @@ import { useBookStore } from "@/providers/BookStoreProvider";
 export default function HomePage() {
   const { profile } = useBookStore();
   const { streak } = useReadingStreak();
-  const titleRewardClass = getStreakRewardTextClassName(streak);
+  const titleRewardClass = getStreakRewardTextClassName(
+    streak,
+    profile.streakStyleId,
+  );
 
   return (
     <div className="space-y-8">

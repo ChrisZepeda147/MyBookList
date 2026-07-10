@@ -19,6 +19,7 @@ export interface ProfileRow {
   last_shielded_date?: string | null;
   shield_activated_on?: string | null;
   shield_offer_dismissed_for?: string | null;
+  streak_style_id?: string | null;
   updated_at: string;
 }
 
@@ -56,6 +57,7 @@ export function profileRowToUser(row: ProfileRow | null): UserProfile {
     lastShieldedDate: row.last_shielded_date ?? null,
     shieldActivatedOn: row.shield_activated_on ?? null,
     shieldOfferDismissedFor: row.shield_offer_dismissed_for ?? null,
+    streakStyleId: row.streak_style_id ?? null,
   };
 }
 
@@ -75,6 +77,7 @@ export function userProfileToRow(
     last_shielded_date: profile.lastShieldedDate,
     shield_activated_on: profile.shieldActivatedOn,
     shield_offer_dismissed_for: profile.shieldOfferDismissedFor,
+    streak_style_id: profile.streakStyleId,
   };
 }
 

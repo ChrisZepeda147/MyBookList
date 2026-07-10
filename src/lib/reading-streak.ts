@@ -372,23 +372,87 @@ const COSMIC_STYLE: StreakRankStyle = {
   fireClass: "streak-fire-legendary",
 };
 
+const SOLAR_STYLE: StreakRankStyle = {
+  kind: "gradient",
+  id: "solar",
+  label: "Solar Flare",
+  fire: "#f97316",
+  cardBg: "#ea580c",
+  cardText: "#ffffff",
+  cardMutedBg: "#ffedd5",
+  cardMutedText: "#c2410c",
+  cardClass: "streak-solar-card",
+  cardMutedClass: "streak-solar-card-muted",
+  fireClass: "streak-fire-solar",
+};
+
+const NEBULA_STYLE: StreakRankStyle = {
+  kind: "legendary",
+  id: "nebula",
+  label: "Nebula Dream",
+  fire: "#e879f9",
+  cardBg: "#7c3aed",
+  cardText: "#ffffff",
+  cardMutedBg: "#ede9fe",
+  cardMutedText: "#6d28d9",
+  cardClass: "streak-nebula-card",
+  cardMutedClass: "streak-nebula-card-muted",
+  fireClass: "streak-fire-nebula",
+};
+
+export const STREAK_STYLE_SELECT_MIN = 30;
+
+export const STREAK_STYLE_BY_ID: Record<string, StreakRankStyle> = {
+  starter: STARTER_STYLE,
+  emerald: EMERALD_STYLE,
+  ember: EMBER_STYLE,
+  prism: PRISM_STYLE,
+  aurora: AURORA_STYLE,
+  cosmic: COSMIC_STYLE,
+  solar: SOLAR_STYLE,
+  nebula: NEBULA_STYLE,
+};
+
 /** Visual styling for a given streak day count (0, 1, 2, 3…). */
 export function getStreakStyleForDay(day: number): StreakRankStyle {
   if (day <= 0) return STARTER_STYLE;
-  if (day >= 21) return COSMIC_STYLE;
-  if (day >= 15) return AURORA_STYLE;
-  if (day >= 10) return PRISM_STYLE;
-  if (day >= 5) return EMBER_STYLE;
+  if (day >= 25) return NEBULA_STYLE;
+  if (day >= 21) return SOLAR_STYLE;
+  if (day >= 15) return COSMIC_STYLE;
+  if (day >= 10) return AURORA_STYLE;
+  if (day >= 6) return PRISM_STYLE;
+  if (day >= 3) return EMBER_STYLE;
   return EMERALD_STYLE;
 }
 
-/** Styling applied to the user's active streak. */
-export function getStreakStyle(streak: number): StreakRankStyle {
+export function getUnlockedStreakStyleIds(streak: number): string[] {
+  return STREAK_RANK_REWARDS.filter(
+    (reward) => reward.id !== "starter" && isStreakRankUnlocked(reward, streak),
+  ).map((reward) => reward.id);
+}
+
+/** Styling applied to the user's active streak (optional equipped style at 30+ days). */
+export function getStreakStyle(
+  streak: number,
+  preferredStyleId?: string | null,
+): StreakRankStyle {
+  if (streak >= STREAK_STYLE_SELECT_MIN && preferredStyleId) {
+    const preferred = STREAK_STYLE_BY_ID[preferredStyleId];
+    if (
+      preferred &&
+      getUnlockedStreakStyleIds(streak).includes(preferredStyleId)
+    ) {
+      return preferred;
+    }
+  }
   return getStreakStyleForDay(streak);
 }
 
-export function streakRankLabel(streak: number): string {
-  return getStreakStyle(streak).label;
+export function streakRankLabel(
+  streak: number,
+  preferredStyleId?: string | null,
+): string {
+  return getStreakStyle(streak, preferredStyleId).label;
 }
 
 export interface StreakRankReward {
@@ -411,43 +475,59 @@ export const STREAK_RANK_REWARDS: StreakRankReward[] = [
   },
   {
     id: "emerald",
-    unlockLabel: "Days 1–4",
+    unlockLabel: "Days 1–2",
     title: "Emerald",
-    description: "Rich emerald green as you start your streak.",
+    description: "Rich emerald green as you spark your first reading days.",
     previewDay: 2,
     minStreak: 1,
   },
   {
     id: "ember",
-    unlockLabel: "Days 5–9",
+    unlockLabel: "Days 3–5",
     title: "Ember",
-    description: "A blend from ember red into emerald green through the week.",
-    previewDay: 7,
-    minStreak: 5,
+    description: "Warm ember red melting into green as your habit catches fire.",
+    previewDay: 4,
+    minStreak: 3,
   },
   {
     id: "prism",
-    unlockLabel: "Days 10–14",
+    unlockLabel: "Days 6–9",
     title: "Prism",
     description: "Premium purple-to-pink gradient on your flame and star.",
+    previewDay: 7,
+    minStreak: 6,
+  },
+  {
+    id: "aurora",
+    unlockLabel: "Days 10–14",
+    title: "Aurora",
+    description: "Shifting rainbow hues as your streak keeps climbing.",
     previewDay: 12,
     minStreak: 10,
   },
   {
-    id: "aurora",
+    id: "cosmic",
     unlockLabel: "Days 15–20",
-    title: "Aurora",
-    description: "Shifting rainbow hues as your streak keeps climbing.",
+    title: "Cosmic Sparkle",
+    description: "Neon metallic gradient with a subtle sparkle overlay.",
     previewDay: 17,
     minStreak: 15,
   },
   {
-    id: "cosmic",
-    unlockLabel: "Days 21+",
-    title: "Cosmic Sparkle",
-    description: "Shifting neon metallic gradient with a subtle sparkle overlay.",
-    previewDay: 21,
+    id: "solar",
+    unlockLabel: "Days 21–24",
+    title: "Solar Flare",
+    description: "Blazing gold and coral flares — your streak is radiating heat.",
+    previewDay: 22,
     minStreak: 21,
+  },
+  {
+    id: "nebula",
+    unlockLabel: "Days 25–29",
+    title: "Nebula Dream",
+    description: "Deep-space violet, magenta, and cyan drifting like a nebula.",
+    previewDay: 27,
+    minStreak: 25,
   },
 ];
 
@@ -564,13 +644,19 @@ export function formatPersonalizedListTitle(username: string): string {
 }
 
 /** CSS class for streak-reactive header/name color (null when streak is 0). */
-export function getStreakRewardTextClassName(streak: number): string | null {
+export function getStreakRewardTextClassName(
+  streak: number,
+  preferredStyleId?: string | null,
+): string | null {
   if (streak <= 0) return null;
-  const { id } = getStreakStyle(streak);
+  const { id } = getStreakStyle(streak, preferredStyleId);
   return `streak-reward-text streak-reward-text--${id}`;
 }
 
 /** @deprecated Use getStreakRewardTextClassName */
-export function getStreakRewardTextGlowClassName(streak: number): string | null {
-  return getStreakRewardTextClassName(streak);
+export function getStreakRewardTextGlowClassName(
+  streak: number,
+  preferredStyleId?: string | null,
+): string | null {
+  return getStreakRewardTextClassName(streak, preferredStyleId);
 }

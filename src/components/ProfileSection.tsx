@@ -27,7 +27,10 @@ export function ProfileSection() {
   const { profile, updateProfile, books } = useBookStore();
   const { sessions } = useReadingSessionLog();
   const { streak } = useReadingStreak();
-  const nameRewardClass = getStreakRewardTextClassName(streak);
+  const nameRewardClass = getStreakRewardTextClassName(
+    streak,
+    profile.streakStyleId,
+  );
   const {
     completedThisYear,
     completedThisMonth,

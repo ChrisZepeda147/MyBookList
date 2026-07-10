@@ -43,6 +43,8 @@ export interface UserProfile {
   shieldActivatedOn: string | null;
   /** Missed day the user declined to shield (suppresses re-prompt). */
   shieldOfferDismissedFor: string | null;
+  /** Optional equipped streak style (unlocked at 30+ days). */
+  streakStyleId: string | null;
 }
 
 export interface BookSearchResult {
@@ -114,6 +116,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   lastShieldedDate: null,
   shieldActivatedOn: null,
   shieldOfferDismissedFor: null,
+  streakStyleId: null,
 };
 
 export type SortOption = "default" | "score" | "alphabetical" | "dateCompleted";

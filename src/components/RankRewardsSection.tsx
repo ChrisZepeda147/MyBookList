@@ -7,8 +7,10 @@ import {
   isStreakRankUnlocked,
   STREAK_RANK_REWARDS,
   STREAK_SHIELD_MILESTONE_INTERVAL,
+  STREAK_STYLE_SELECT_MIN,
 } from "@/lib/reading-streak";
 import { useReadingStreak } from "@/hooks/useReadingStreak";
+import { useBookStore } from "@/providers/BookStoreProvider";
 import { AnnualBookCountTrack } from "@/components/AnnualBookCountTrack";
 import { StreakShieldBadge } from "@/components/StreakShieldBadge";
 import { StreakStyleCard, StreakStyleSwatch } from "@/components/StreakStyleCard";
@@ -19,7 +21,10 @@ interface RankRewardsSectionProps {
 
 export function RankRewardsSection({ inModal = false }: RankRewardsSectionProps) {
   const { streak, streakShields, shieldOffer } = useReadingStreak();
-  const activeStyleId = getStreakStyle(streak).id;
+  const { profile, updateProfile } = useBookStore();
+  const activeStyle = getStreakStyle(streak, profile.streakStyleId);
+  const activeStyleId = activeStyle.id;
+  const canSelectStyle = streak >= STREAK_STYLE_SELECT_MIN;
 
   return (
     <section
@@ -133,11 +138,31 @@ export function RankRewardsSection({ inModal = false }: RankRewardsSectionProps)
         </div>
       </div>
 
+      {canSelectStyle && (
+        <p
+          className={`mt-5 rounded-xl border px-4 py-3 text-xs sm:text-sm ${
+            inModal
+              ? "rank-rewards-shield-box border-amber-300/25 text-amber-100/85"
+              : "border-amber-200 bg-amber-50/80 text-amber-900/90"
+          }`}
+        >
+          You&apos;ve hit {STREAK_STYLE_SELECT_MIN}+ days — tap{" "}
+          <span className="font-semibold">Equip</span> on any unlocked tier to
+          wear that style across your profile and streak display.
+        </p>
+      )}
+
       <ul className="mt-5 space-y-2.5 sm:space-y-3">
         {STREAK_RANK_REWARDS.map((reward) => {
           const unlocked = isStreakRankUnlocked(reward, streak);
           const isActive = reward.id === activeStyleId;
+          const isEquipped = canSelectStyle && profile.streakStyleId === reward.id;
           const style = getStreakStyleForDay(reward.previewDay);
+
+          function handleEquipStyle() {
+            if (!canSelectStyle || !unlocked || reward.id === "starter") return;
+            void updateProfile({ streakStyleId: reward.id });
+          }
 
           return (
             <li
@@ -182,7 +207,7 @@ export function RankRewardsSection({ inModal = false }: RankRewardsSectionProps)
                   </span>
                   {isActive && (
                     <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
-                      Current
+                      {isEquipped ? "Equipped" : "Current"}
                     </span>
                   )}
                 </div>
@@ -204,6 +229,20 @@ export function RankRewardsSection({ inModal = false }: RankRewardsSectionProps)
                   iconsOnly
                 />
               </div>
+
+              {canSelectStyle && unlocked && reward.id !== "starter" && !isActive && (
+                <button
+                  type="button"
+                  onClick={handleEquipStyle}
+                  className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold sm:text-xs ${
+                    inModal
+                      ? "border border-amber-200/25 bg-white/10 text-amber-100 hover:bg-white/15"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Equip
+                </button>
+              )}
 
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8 ${
