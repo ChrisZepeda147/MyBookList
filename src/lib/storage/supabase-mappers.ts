@@ -1,7 +1,7 @@
 import type { BookEntry, ReadingSessionLogEntry, ReadingStatus, UserProfile } from "@/lib/types";
 import { DEFAULT_PROFILE } from "@/lib/types";
 import { normalizeAvatarUrl } from "@/lib/storage/avatar-url";
-import { ensureBookDescription } from "@/lib/book-descriptions";
+import { ensureBookDescription, descriptionForStorage, hasRealDescription, isPlaceholderDescription, cleanDescription } from "@/lib/book-descriptions";
 import {
   looksLikeRawApiCategories,
   resolveBookCategoryTags,
@@ -87,7 +87,10 @@ export function bookRowToEntry(row: BookRow): BookEntry {
     apiCategories = row.categories;
   }
 
-  const description = ensureBookDescription(row.description);
+  const description = hasRealDescription(row.description)
+    ? cleanDescription(row.description)
+    : null;
+  const descriptionForTags = ensureBookDescription(description);
 
   return {
     id: row.id,
@@ -102,7 +105,7 @@ export function bookRowToEntry(row: BookRow): BookEntry {
     categories: resolveBookCategoryTags(
       apiCategories,
       row.categories ?? [],
-      description,
+      descriptionForTags,
       row.title,
       row.author,
     ),
@@ -132,7 +135,7 @@ export function bookEntryToInsert(
     title: book.title,
     author: book.author,
     cover_url: book.coverUrl,
-    description,
+    description: descriptionForStorage(book.description),
     page_count: book.pageCount,
     page_count_locked: book.pageCountLocked ?? false,
     current_page: book.currentPage ?? null,
@@ -154,7 +157,7 @@ export function bookUpdatesToRow(
   if (updates.author !== undefined) row.author = updates.author;
   if (updates.coverUrl !== undefined) row.cover_url = updates.coverUrl;
   if (updates.description !== undefined) {
-    row.description = ensureBookDescription(updates.description);
+    row.description = descriptionForStorage(updates.description);
   }
   if (updates.pageCount !== undefined) row.page_count = updates.pageCount;
   if (updates.pageCountLocked !== undefined) {

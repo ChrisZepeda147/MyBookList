@@ -9,9 +9,14 @@ import { clampRating } from "@/lib/ratings";
 import { resolveBookCategoryTags } from "@/lib/categories";
 import {
   ensureBookDescription,
+  hasRealDescription,
   isPlaceholderDescription,
+  descriptionForStorage,
 } from "@/lib/book-descriptions";
-import { fetchBookMetadataClient } from "@/lib/fetch-book-metadata-client";
+import {
+  fetchBookMetadataClient,
+  fetchVolumeDescriptionClient,
+} from "@/lib/fetch-book-metadata-client";
 import { normalizeTitle, primaryAuthor } from "@/lib/google-books-client";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
 import { StarRating } from "@/components/StarRating";
@@ -63,6 +68,8 @@ export function BookPreviewModal({
 
   const canRate = status === "completed";
   const alreadyAdded = isAlreadyInLibrary(book, books);
+  const volumeId = book.id.startsWith("ol-") ? null : book.id;
+  const waitingForDescription = Boolean(volumeId) && descriptionLoading;
 
   function animateClose(callback: () => void) {
     setIsClosing(true);
@@ -81,7 +88,7 @@ export function BookPreviewModal({
       subtitle: book.subtitle ?? null,
       author: book.author,
       coverUrl: book.coverUrl,
-      description,
+      description: descriptionForStorage(description),
       pageCount,
       apiCategories: book.apiCategories ?? [],
       categories: resolveBookCategoryTags(
@@ -107,29 +114,41 @@ export function BookPreviewModal({
   }, [book.id, book.description]);
 
   useEffect(() => {
-    if (!isPlaceholderDescription(book.description)) return;
+    const volumeId = book.id.startsWith("ol-") ? null : book.id;
+    if (!volumeId) return;
 
     let cancelled = false;
-    setDescriptionLoading(true);
+    const showLoading = !hasRealDescription(book.description);
+    if (showLoading) setDescriptionLoading(true);
 
-    void fetchBookMetadataClient({
-      title: book.title,
-      author: book.author,
-      googleBooksId: book.id.startsWith("ol-") ? null : book.id,
-      isbn: book.isbn13 ?? book.isbn10 ?? null,
-    })
-      .then((meta) => {
-        if (cancelled || !meta?.description) return;
-        setDescription(meta.description);
-      })
-      .finally(() => {
-        if (!cancelled) setDescriptionLoading(false);
+    void (async () => {
+      const direct = await fetchVolumeDescriptionClient(volumeId);
+      if (cancelled) return;
+
+      if (hasRealDescription(direct)) {
+        setDescription(direct!);
+        setDescriptionLoading(false);
+        return;
+      }
+
+      const meta = await fetchBookMetadataClient({
+        title: book.title,
+        author: book.author,
+        googleBooksId: volumeId,
+        isbn: book.isbn13 ?? book.isbn10 ?? null,
       });
+
+      if (!cancelled && meta && hasRealDescription(meta.description)) {
+        setDescription(meta.description);
+      }
+    })().finally(() => {
+      if (!cancelled && showLoading) setDescriptionLoading(false);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [book.id, book.title, book.author, book.description]);
+  }, [book.id, book.title, book.author, book.isbn13, book.isbn10]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -195,11 +214,11 @@ export function BookPreviewModal({
           <button
             type="button"
             onClick={handleAdd}
-            disabled={alreadyAdded}
+            disabled={alreadyAdded || waitingForDescription}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-all duration-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <Plus className="h-4 w-4" />
-            Add to List
+            {waitingForDescription ? "Loading description…" : "Add to List"}
           </button>
         </div>
       }

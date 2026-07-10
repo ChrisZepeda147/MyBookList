@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import Image from "next/image";
 import { BookOpen, Trash2 } from "lucide-react";
 import type { BookEntry, ReadingStatus } from "@/lib/types";
@@ -9,7 +10,8 @@ import { StarRating } from "@/components/StarRating";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadges } from "@/components/CategoryBadges";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
-import { ensureBookDescription } from "@/lib/book-descriptions";
+import { ListBookDescription } from "@/components/ListBookDescription";
+import { useResolveMissingDescription } from "@/hooks/useResolveMissingDescription";
 
 interface BookCardProps {
   book: BookEntry;
@@ -17,9 +19,16 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, onSelect }: BookCardProps) {
-  const { setBookStatus, setBookRating, removeBook } = useBookStore();
+  const { setBookStatus, setBookRating, removeBook, updateBook } = useBookStore();
   const canRate = book.status === "completed";
-  const displayDescription = ensureBookDescription(book.description);
+  const handleDescriptionResolved = useCallback(
+    (id: string, description: string) => {
+      updateBook(id, { description });
+    },
+    [updateBook],
+  );
+  const { description: displayDescription, loading: descriptionLoading } =
+    useResolveMissingDescription(book, handleDescriptionResolved);
 
   if (!bookHasDisplayableCover(book, "list")) {
     return null;
@@ -94,9 +103,10 @@ export function BookCard({ book, onSelect }: BookCardProps) {
           }}
           className="book-card-description-slot w-full cursor-pointer text-left"
         >
-          <p className="book-description-text line-clamp-3 text-sm text-slate-500 md:line-clamp-none">
-            {displayDescription}
-          </p>
+          <ListBookDescription
+            description={displayDescription}
+            loading={descriptionLoading}
+          />
         </div>
 
         <div

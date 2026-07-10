@@ -71,6 +71,7 @@ export function bestDescriptionFromTexts(
 ): string | null {
   let best: string | null = null;
   for (const raw of descriptions) {
+    if (!hasRealDescription(raw)) continue;
     const desc = cleanDescription(raw);
     if (desc && (!best || desc.length > best.length)) {
       best = desc;
@@ -83,4 +84,11 @@ export function hasDescriptionText(
   description: string | null | undefined,
 ): boolean {
   return hasRealDescription(description);
+}
+
+/** Persist null instead of placeholder text in the database. */
+export function descriptionForStorage(
+  description: string | null | undefined,
+): string | null {
+  return hasRealDescription(description) ? cleanDescription(description)! : null;
 }

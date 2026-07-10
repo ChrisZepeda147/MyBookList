@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchGoogleBookMetadata } from "@/lib/google-books";
+import {
+  fetchGoogleBookMetadata,
+  fetchGoogleBookMetadataByVolumeId,
+} from "@/lib/google-books";
+import { hasRealDescription } from "@/lib/book-descriptions";
 
 export async function GET(request: NextRequest) {
   const title = request.nextUrl.searchParams.get("title") ?? "";
@@ -16,6 +20,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (googleBooksId) {
+      const byVolume = await fetchGoogleBookMetadataByVolumeId(googleBooksId);
+      if (byVolume && hasRealDescription(byVolume.description)) {
+        return NextResponse.json(byVolume);
+      }
+    }
+
     const metadata = await fetchGoogleBookMetadata({
       title,
       author,

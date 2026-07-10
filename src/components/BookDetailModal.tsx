@@ -10,9 +10,13 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadges } from "@/components/CategoryBadges";
 import {
   ensureBookDescription,
+  hasRealDescription,
   isPlaceholderDescription,
 } from "@/lib/book-descriptions";
-import { fetchBookMetadataClient } from "@/lib/fetch-book-metadata-client";
+import {
+  fetchBookMetadataClient,
+  fetchVolumeDescriptionClient,
+} from "@/lib/fetch-book-metadata-client";
 import { BookModalAbout, BookModalLayout } from "@/components/BookModalLayout";
 import {
   ReadingSessionView,
@@ -165,24 +169,43 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
     let cancelled = false;
     setDescriptionLoading(true);
 
-    void fetchBookMetadataClient({
-      title: book.title,
-      author: book.author,
-      googleBooksId: book.googleBooksId,
-    })
-      .then((meta) => {
-        if (cancelled || !meta?.description) return;
+    void (async () => {
+      if (book.googleBooksId) {
+        const direct = await fetchVolumeDescriptionClient(book.googleBooksId);
+        if (cancelled) return;
+
+        if (hasRealDescription(direct)) {
+          setDescription(direct!);
+          updateBook(book.id, { description: direct! });
+          return;
+        }
+      }
+
+      const meta = await fetchBookMetadataClient({
+        title: book.title,
+        author: book.author,
+        googleBooksId: book.googleBooksId,
+      });
+
+      if (!cancelled && meta && hasRealDescription(meta.description)) {
         setDescription(meta.description);
         updateBook(book.id, { description: meta.description });
-      })
-      .finally(() => {
-        if (!cancelled) setDescriptionLoading(false);
-      });
+      }
+    })().finally(() => {
+      if (!cancelled) setDescriptionLoading(false);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [book.id, book.title, book.author, book.googleBooksId, book.description, updateBook]);
+  }, [
+    book.id,
+    book.title,
+    book.author,
+    book.googleBooksId,
+    book.description,
+    updateBook,
+  ]);
 
   if (showReadingSession && isReading) {
     return (

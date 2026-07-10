@@ -72,6 +72,7 @@ body {
 
 .book-description-clamp {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -79,12 +80,12 @@ body {
   word-break: break-word;
 }
 
-/* List card — reserve 3 lines on mobile so card height stays stable */
+/* List card — reserve 5 lines so card height stays stable when clamped */
 .book-card-description-slot {
   min-width: 0;
   flex-shrink: 0;
   overflow: hidden;
-  min-height: calc(1.5625rem * 3);
+  min-height: calc(1.625rem * 5);
 }
 
 @media (min-width: 768px) {

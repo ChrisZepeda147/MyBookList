@@ -3,7 +3,7 @@ import { getGoogleBooksApiKey } from "@/lib/google-books-api-key";
 import {
   bestDescriptionFromTexts,
   cleanDescription,
-  ensureBookDescription,
+  descriptionFromVolume,
 } from "@/lib/book-descriptions";
 import {
   isPlausiblePageCount,
@@ -148,7 +148,7 @@ export function mapGoogleVolume(item: GoogleVolume): BookSearchResult {
     subtitle: info?.subtitle ?? null,
     author: info?.authors?.join(", ") ?? "Unknown Author",
     coverUrl,
-    description: ensureBookDescription(info?.description),
+    description: descriptionFromVolume(item),
     pageCount: sanitizePageCount(info?.pageCount),
     categories: (info?.categories ?? []).map((c) => c.trim()).filter(Boolean),
     editionLabel: editionLabel(item),
@@ -252,16 +252,15 @@ export function refineSearchResults(
     );
 
     for (const book of group) {
-      const description = ensureBookDescription(
-        cleanDescription(book.description) ?? bestDescription,
-      );
-      const nextBook = { ...book, description };
-
-      if (book.pageCount != null && !isPlausiblePageCount(book.pageCount)) {
-        refined.push({ ...nextBook, pageCount: med });
-      } else {
-        refined.push(nextBook);
-      }
+      const description =
+        cleanDescription(book.description) ?? bestDescription;
+      refined.push({
+        ...book,
+        description,
+        ...(book.pageCount != null && !isPlausiblePageCount(book.pageCount)
+          ? { pageCount: med }
+          : {}),
+      });
     }
   }
 
@@ -391,12 +390,23 @@ export async function fetchGoogleVolumeById(
   id: string,
 ): Promise<GoogleVolume | null> {
   const params = buildGoogleParams({ projection: "full" });
-  const response = await fetch(`${GOOGLE_BOOKS_API}/${id}?${params}`, {
+  const response = await fetch(`${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?${params}`, {
     headers: { Accept: "application/json" },
     cache: "no-store",
   });
   if (!response.ok) return null;
   return (await response.json()) as GoogleVolume;
+}
+
+/**
+ * Read description strictly from volumeInfo.description on a single-volume
+ * GET /volumes/{id} response (never search snippets).
+ */
+export async function fetchVolumeDescriptionById(
+  volumeId: string,
+): Promise<string | null> {
+  const volume = await fetchGoogleVolumeById(volumeId);
+  return descriptionFromVolume(volume);
 }
 
 export async function searchEditionsForBook(

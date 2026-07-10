@@ -82,6 +82,16 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const applyBookMetadataUpdate = useCallback(
+    (id: string, updates: Partial<BookEntry>) => {
+      setBooks((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+      );
+      void applyBookPatch(id, updates);
+    },
+    [applyBookPatch],
+  );
+
   useEffect(() => {
     if (!authReady) {
       setLoaded(false);
@@ -118,9 +128,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         setProfile(nextProfile);
         setBooks(nextBooks);
 
-        scheduleLibraryMetadataBackfill(nextBooks, (id, updates) => {
-          void applyBookPatch(id, updates);
-        });
+        scheduleLibraryMetadataBackfill(nextBooks, applyBookMetadataUpdate);
       } catch (err) {
         console.error("[BookStore] Failed to load user data:", err);
       } finally {
@@ -131,7 +139,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, authReady, applyBookPatch]);
+  }, [user, authReady, applyBookMetadataUpdate]);
 
   const updateProfile = useCallback(
     async (updates: Partial<UserProfile>): Promise<void> => {
@@ -198,9 +206,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
           ]);
 
           if (bookNeedsMetadataBackfill(entry)) {
-            void backfillSingleBookMetadata(entry, (id, updates) => {
-              void applyBookPatch(id, updates);
-            });
+            void backfillSingleBookMetadata(entry, applyBookMetadataUpdate);
           }
         } catch (err) {
           setBooks((prev) => prev.filter((b) => b.id !== tempId));
@@ -208,7 +214,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     },
-    [applyBookPatch],
+    [applyBookMetadataUpdate],
   );
 
   const updateBook = useCallback(

@@ -136,6 +136,17 @@ function shouldSkipLibraryBackfill(books: BookEntry[]): boolean {
   return eligible.every((book) => attempted.has(book.id));
 }
 
+function shouldUseLiteBackfill(book: BookEntry): boolean {
+  const needsDescription = !hasRealDescription(book.description);
+  const pages = book.pageCount ?? 0;
+  const needsPages =
+    !book.pageCountLocked &&
+    (pages <= 0 || !isPlausiblePageCount(pages));
+
+  if (needsDescription && !needsPages) return false;
+  return true;
+}
+
 async function fetchMetadataFromApi(
   book: BookEntry,
   options?: { lite?: boolean },
@@ -244,7 +255,10 @@ export async function backfillSingleBookMetadata(
   if (!bookNeedsMetadataBackfill(book)) return;
   if (isGoogleBooksCircuitOpen()) return;
 
-  const meta = await fetchMetadataFromApi(book);
+  const meta = await fetchMetadataFromApi(
+    book,
+    shouldUseLiteBackfill(book) ? { lite: true } : undefined,
+  );
   if (!meta) return;
 
   const updates = applyMetadata(book, meta);
@@ -276,7 +290,10 @@ async function runLibraryMetadataBackfill(
 
     attemptedIds.push(book.id);
     recordBackfillAttempt(book.id);
-    const meta = await fetchMetadataFromApi(book, { lite: true });
+    const meta = await fetchMetadataFromApi(
+      book,
+      shouldUseLiteBackfill(book) ? { lite: true } : undefined,
+    );
 
     if (meta) {
       const updates = applyMetadata(book, meta);
