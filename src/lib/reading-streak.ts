@@ -361,7 +361,7 @@ const AURORA_STYLE: StreakRankStyle = {
 const COSMIC_STYLE: StreakRankStyle = {
   kind: "legendary",
   id: "cosmic",
-  label: "Cosmic Sparkle",
+  label: "Cosmic",
   fire: "#22d3ee",
   cardBg: "#6366f1",
   cardText: "#ffffff",
@@ -375,7 +375,7 @@ const COSMIC_STYLE: StreakRankStyle = {
 const SOLAR_STYLE: StreakRankStyle = {
   kind: "gradient",
   id: "solar",
-  label: "Solar Flare",
+  label: "Solar",
   fire: "#f97316",
   cardBg: "#ea580c",
   cardText: "#ffffff",
@@ -389,7 +389,7 @@ const SOLAR_STYLE: StreakRankStyle = {
 const NEBULA_STYLE: StreakRankStyle = {
   kind: "legendary",
   id: "nebula",
-  label: "Nebula Dream",
+  label: "Nebula",
   fire: "#e879f9",
   cardBg: "#7c3aed",
   cardText: "#ffffff",
@@ -508,7 +508,7 @@ export const STREAK_RANK_REWARDS: StreakRankReward[] = [
   {
     id: "cosmic",
     unlockLabel: "Days 15–20",
-    title: "Cosmic Sparkle",
+    title: "Cosmic",
     description: "Neon metallic gradient with a subtle sparkle overlay.",
     previewDay: 17,
     minStreak: 15,
@@ -516,7 +516,7 @@ export const STREAK_RANK_REWARDS: StreakRankReward[] = [
   {
     id: "solar",
     unlockLabel: "Days 21–24",
-    title: "Solar Flare",
+    title: "Solar",
     description: "Blazing gold and coral flares — your streak is radiating heat.",
     previewDay: 22,
     minStreak: 21,
@@ -524,7 +524,7 @@ export const STREAK_RANK_REWARDS: StreakRankReward[] = [
   {
     id: "nebula",
     unlockLabel: "Days 25–29",
-    title: "Nebula Dream",
+    title: "Nebula",
     description: "Deep-space violet, magenta, and cyan drifting like a nebula.",
     previewDay: 27,
     minStreak: 25,
@@ -603,7 +603,7 @@ export function getStreakTier(streak: number): StreakTier {
 export function streakTierLabel(tier: StreakTier): string {
   switch (tier) {
     case "epic":
-      return "Cosmic Sparkle";
+      return "Cosmic";
     case "gold":
       return "Prism Gradient";
     case "silver":
