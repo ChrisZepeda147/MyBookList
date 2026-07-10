@@ -17,11 +17,8 @@ import {
   isFetchTimeoutError,
 } from "@/lib/fetch-with-timeout";
 
-import {
-  isGoogleBooksCircuitOpen,
-  tripGoogleBooksCircuit,
-} from "@/lib/google-books-circuit";
-import { isRateLimitStatus } from "@/lib/google-books-errors";
+import { isRateLimitStatus, logGoogleBooksServerFetchFailure } from "@/lib/google-books-errors";
+import { isGoogleBooksCircuitOpen } from "@/lib/google-books-circuit";
 import {
   buildGoogleParams,
   buildStrictIntitleQuery,
@@ -85,15 +82,12 @@ async function fetchVolumesWithRateLimit(
   });
 
   if (isRateLimitStatus(res.status)) {
-    tripGoogleBooksCircuit();
-    console.warn(
-      "[google-books] Rate limited — circuit open for 1 hour.",
-      res.status,
-    );
+    logGoogleBooksServerFetchFailure(query, `HTTP ${res.status}`);
     return [];
   }
 
   if (!res.ok) {
+    logGoogleBooksServerFetchFailure(query, `HTTP ${res.status}`);
     throw new Error(`Google Books API error: ${res.status}`);
   }
 
@@ -233,6 +227,36 @@ async function resolveBookDescription(
   return ensureBookDescription(description);
 }
 
+async function enrichFromOpenLibraryDirect(
+  books: BookSearchResult[],
+): Promise<void> {
+  const groups = new Map<string, BookSearchResult[]>();
+
+  for (const book of books) {
+    const key = `${normalizeTitle(book.title)}|${primaryAuthor(book.author).toLowerCase()}`;
+    const list = groups.get(key) ?? [];
+    list.push(book);
+    groups.set(key, list);
+  }
+
+  for (const group of groups.values()) {
+    if (!group.every((book) => !hasRealDescription(book.description))) continue;
+
+    const sample = group[0];
+    if (!sample) continue;
+
+    const description = await fetchOpenLibraryDescription(
+      sample.title,
+      sample.author,
+    );
+    if (!description) continue;
+
+    for (const book of group) {
+      book.description = description;
+    }
+  }
+}
+
 async function enrichDescriptionGroup(
   group: BookSearchResult[],
 ): Promise<void> {
@@ -342,6 +366,7 @@ export async function searchGoogleBooks(
       ),
     );
     editions = await enrichMissingDescriptions(editions);
+    await enrichFromOpenLibraryDirect(editions);
     return onlyWithCover(
       rankSearchResultsByRelevance(editions, searchQuery),
     );
@@ -390,6 +415,10 @@ export async function fetchGoogleBookMetadataByVolumeId(
     });
   }
 
+  if (!description && title.trim()) {
+    description = await fetchOpenLibraryDescription(title, author);
+  }
+
   const patch = volumeToBookPatch(volume);
   const apiCategories = ensureBookCategories(patch.categories ?? []);
   const displayDescription = ensureBookDescription(description);
@@ -418,7 +447,21 @@ export async function fetchGoogleBookMetadata(input: {
   isbn?: string | null;
   lite?: boolean;
 }): Promise<BookMetadataResult | null> {
-  if (isGoogleBooksCircuitOpen()) return null;
+  const resolvedTitle = input.title.trim();
+  const resolvedAuthor = input.author.trim() || "Unknown Author";
+
+  if (!resolvedTitle && !input.googleBooksId && !input.isbn) {
+    return null;
+  }
+
+  if (isGoogleBooksCircuitOpen()) {
+    if (!resolvedTitle) return null;
+    return buildOpenLibraryOnlyMetadata(
+      resolvedTitle,
+      resolvedAuthor,
+      input.googleBooksId,
+    );
+  }
 
   if (input.googleBooksId) {
     const byVolume = await fetchGoogleBookMetadataByVolumeId(
@@ -430,18 +473,18 @@ export async function fetchGoogleBookMetadata(input: {
   }
 
   let volumes: GoogleVolume[] = [];
-  let resolvedTitle = input.title;
-  let resolvedAuthor = input.author;
+  let title = resolvedTitle;
+  let author = resolvedAuthor;
 
   if (input.googleBooksId) {
     const byId = await fetchGoogleVolumeById(input.googleBooksId);
     if (byId) {
       volumes = [byId];
-      if (!resolvedTitle.trim()) {
-        resolvedTitle = byId.volumeInfo?.title ?? "";
+      if (!title) {
+        title = byId.volumeInfo?.title ?? "";
       }
-      if (!resolvedAuthor.trim()) {
-        resolvedAuthor = byId.volumeInfo?.authors?.join(", ") ?? "Unknown Author";
+      if (!author.trim()) {
+        author = byId.volumeInfo?.authors?.join(", ") ?? "Unknown Author";
       }
     }
   }
@@ -450,12 +493,15 @@ export async function fetchGoogleBookMetadata(input: {
     volumes = await fetchGoogleVolumesByIsbn(input.isbn);
   }
 
-  if (!volumes.length && resolvedTitle.trim()) {
-    volumes = await searchEditionsForBook(resolvedTitle, resolvedAuthor);
+  if (!volumes.length && title) {
+    volumes = await searchEditionsForBook(title, author);
   }
 
   const best = pickBestVolume(volumes);
-  if (!best) return null;
+  if (!best) {
+    if (!title) return null;
+    return buildOpenLibraryOnlyMetadata(title, author, input.googleBooksId);
+  }
 
   const patch = volumeToBookPatch(best);
   const apiCategories = ensureBookCategories(patch.categories ?? []);
@@ -466,12 +512,36 @@ export async function fetchGoogleBookMetadata(input: {
     primaryIsbnFromVolume(best);
   const description = await resolveBookDescription(
     volumes,
-    resolvedTitle,
-    resolvedAuthor,
+    title,
+    author,
     input.googleBooksId ?? best.id,
     isbn,
     { lite: input.lite },
   );
+
+  if (!hasRealDescription(description) && title) {
+    const openLibraryDescription = await fetchOpenLibraryDescription(
+      title,
+      author,
+    );
+    if (openLibraryDescription) {
+      return {
+        pageCount: patch.pageCount ?? null,
+        description: ensureBookDescription(openLibraryDescription),
+        coverUrl: patch.coverUrl ?? null,
+        googleBooksId: best.id,
+        apiCategories,
+        categories: categoriesFromApi(
+          apiCategories,
+          openLibraryDescription,
+          title,
+          author,
+        ),
+        isbn13: patch.isbn13 ?? null,
+        isbn10: patch.isbn10 ?? null,
+      };
+    }
+  }
 
   return {
     pageCount: patch.pageCount ?? null,
@@ -482,10 +552,30 @@ export async function fetchGoogleBookMetadata(input: {
     categories: categoriesFromApi(
       apiCategories,
       description,
-      resolvedTitle,
-      resolvedAuthor,
+      title,
+      author,
     ),
     isbn13: patch.isbn13 ?? null,
     isbn10: patch.isbn10 ?? null,
+  };
+}
+
+async function buildOpenLibraryOnlyMetadata(
+  title: string,
+  author: string,
+  googleBooksId?: string | null,
+): Promise<BookMetadataResult | null> {
+  const description = await fetchOpenLibraryDescription(title, author);
+  if (!description) return null;
+
+  return {
+    pageCount: null,
+    description: ensureBookDescription(description),
+    coverUrl: null,
+    googleBooksId: googleBooksId ?? null,
+    apiCategories: [],
+    categories: categoriesFromApi([], description, title, author),
+    isbn13: null,
+    isbn10: null,
   };
 }

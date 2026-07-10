@@ -54,6 +54,7 @@ export function PublicProfileSection({
               src={avatarDisplaySrc}
               alt={displayName}
               fill
+              sizes="96px"
               className="object-cover"
               unoptimized={avatarDisplaySrc.startsWith("blob:")}
             />

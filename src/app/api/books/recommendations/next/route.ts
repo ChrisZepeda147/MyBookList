@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchNextRecommendation } from "@/lib/recommendations";
-import { isGoogleBooksRateLimitError } from "@/lib/google-books-errors";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
 import type { BookEntry } from "@/lib/types";
 
@@ -31,13 +30,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ book });
   } catch (err) {
-    if (isGoogleBooksRateLimitError(err)) {
-      return NextResponse.json(
-        { error: "Google Books rate limited", book: null },
-        { status: 429 },
-      );
-    }
-
     console.error("[api/books/recommendations/next]", err);
     return NextResponse.json(
       { error: "Failed to load replacement recommendation" },

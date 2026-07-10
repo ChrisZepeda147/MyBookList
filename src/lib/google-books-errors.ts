@@ -22,3 +22,11 @@ export function isGoogleBooksRateLimitError(err: unknown): boolean {
   if (err instanceof Error && err.message === BOOKS_API_UNAVAILABLE) return true;
   return false;
 }
+
+/** Loud server-side log when a Google Books fetch fails. */
+export function logGoogleBooksServerFetchFailure(
+  label: string,
+  reason: unknown,
+): void {
+  console.log("🚨 SERVER FETCH FAILED FOR BOOK:", label, "REASON:", reason);
+}

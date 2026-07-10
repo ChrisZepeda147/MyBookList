@@ -4,11 +4,11 @@ import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { getGoogleBooksApiKey, withGoogleBooksApiKey } from "@/lib/google-books-api-key";
 import {
   isGoogleBooksCircuitOpen,
-  tripGoogleBooksCircuit,
 } from "@/lib/google-books-circuit";
-import { isRateLimitStatus } from "@/lib/google-books-errors";
+import { isRateLimitStatus, logGoogleBooksServerFetchFailure } from "@/lib/google-books-errors";
 import { resolveBookCategoryTags } from "@/lib/categories";
 import { bookHasDisplayableCover, normalizeCoverUrl } from "@/lib/cover-url";
+import { resolveOpenLibraryDocDescription } from "@/lib/open-library";
 import {
   mapGoogleVolume,
   normalizeTitle,
@@ -23,7 +23,8 @@ const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 const OPEN_LIBRARY_API = "https://openlibrary.org/search.json";
 /** Per upstream catalog request while building recommendations. */
 const RECOMMENDATION_FETCH_TIMEOUT_MS = 3500;
-const RECOMMENDATION_FETCH_CONCURRENCY = 5;
+/** Targeted fetches (dismiss / top-rated refresh) run sequentially to avoid 429s. */
+const RECOMMENDATION_FETCH_CONCURRENCY = 2;
 
 type RecommendationQueryPlan = {
   googleQuery: string;
@@ -53,11 +54,13 @@ async function mapInParallel<T, R>(
   return results;
 }
 
-export const MIN_RECOMMENDATIONS = 8;
-/** Internal fetch pool — UI displays MIN_RECOMMENDATIONS; extras support dismiss replacement. */
-export const MAX_RECOMMENDATIONS = 12;
-/** Initial API response — extras load on dismiss via /recommendations/next. */
+export const MIN_RECOMMENDATIONS = 5;
+/** Display and cache size — exactly five cards in the carousel. */
+export const MAX_RECOMMENDATIONS = 5;
+/** Initial API response size. */
 const INITIAL_RECOMMENDATION_TARGET = MIN_RECOMMENDATIONS;
+/** Ratings at or above this threshold trigger a full recommendation refresh. */
+export const HIGH_RATING_THRESHOLD = 4;
 const MIN_RATED_FOR_PERSONALIZED = 1;
 const RECENT_YEARS_BACK = 10;
 const HISTORY_SEED_COUNT = 4;
@@ -348,10 +351,11 @@ async function mapOpenLibraryDocWithDescription(
 
   const authorName = doc.author_name?.join(", ") ?? "Unknown Author";
   const title = doc.title ?? "Unknown Title";
-  const description = ensureBookDescription(
-    cleanDescription(doc.first_sentence?.join(" ")) ||
+  const description =
+    (await resolveOpenLibraryDocDescription(doc)) ??
+    ensureBookDescription(
       `A highly regarded work by ${authorName}.`,
-  );
+    );
 
   const id = doc.key?.replace(/^\//, "") ?? crypto.randomUUID();
   const pages = doc.number_of_pages_median ?? null;
@@ -531,6 +535,26 @@ function ratedBooksFingerprint(books: BookEntry[]): string {
     .join("|");
 }
 
+/** Fingerprint of the two highest-rated books — used when saving recommendation cache. */
+export function topTwoRatedFingerprint(books: BookEntry[]): string {
+  return books
+    .filter((b) => b.rating != null && b.rating > 0)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 2)
+    .map((b) => `${b.id}:${b.rating}`)
+    .join("|");
+}
+
+export function getTopRatedBooks(
+  books: BookEntry[],
+  limit = 2,
+): BookEntry[] {
+  return books
+    .filter((b) => b.rating != null && b.rating > 0)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, limit);
+}
+
 function sortByTaste(
   books: BookSearchResult[],
   profile: TasteProfile,
@@ -661,14 +685,14 @@ async function fetchGoogleQuery(
     );
 
     if (isRateLimitStatus(response.status)) {
-      tripGoogleBooksCircuit();
-      console.warn(
-        "[recommendations] Google Books rate limited — Open Library only for 1 hour.",
-      );
+      logGoogleBooksServerFetchFailure(query, `HTTP ${response.status}`);
       return [];
     }
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      logGoogleBooksServerFetchFailure(query, `HTTP ${response.status}`);
+      return [];
+    }
 
     const data = (await response.json()) as GoogleBooksResponse;
     return onlyWithCover(
@@ -726,17 +750,31 @@ async function fetchOpenLibraryQuery(
 async function fetchWithFallback(
   googleQuery: string,
   openLibraryQuery: string,
+  options?: { skipGoogle?: boolean },
 ): Promise<BookSearchResult[]> {
-  const [google, openLib] = await Promise.all([
-    isGoogleBooksCircuitOpen()
-      ? Promise.resolve([] as BookSearchResult[])
-      : fetchGoogleQuery(googleQuery, 15),
-    fetchOpenLibraryQuery(openLibraryQuery, 15),
-  ]);
+  const openLib = await fetchOpenLibraryQuery(openLibraryQuery, 15);
 
-  return onlyWithCover(
+  if (options?.skipGoogle) {
+    return onlyWithCover(
+      onlyRecommendable(dedupeByNormalizedTitle(openLib)),
+    );
+  }
+
+  const google = isGoogleBooksCircuitOpen()
+    ? []
+    : await fetchGoogleQuery(googleQuery, 15);
+
+  const merged = onlyWithCover(
     onlyRecommendable(dedupeByNormalizedTitle([...google, ...openLib])),
   );
+
+  if (merged.length === 0 && openLib.length > 0) {
+    return onlyWithCover(
+      onlyRecommendable(dedupeByNormalizedTitle(openLib)),
+    );
+  }
+
+  return merged;
 }
 
 async function runRecommendationQueries(
@@ -1006,44 +1044,65 @@ export interface RecommendationResult {
   refreshedAt: string;
 }
 
-const REC_CACHE_KEY = "mybooklist_recommendations_cache_v10";
+const REC_CACHE_KEY = "mybooklist_current_recommendations_v1";
+const LEGACY_REC_CACHE_KEY = "mybooklist_recommendations_cache_v10";
 
 interface RecommendationCache {
+  topRatedFingerprint: string;
+  result: RecommendationResult;
+}
+
+interface LegacyRecommendationCache {
   date: string;
   ratedFingerprint: string;
   result: RecommendationResult;
 }
 
 export function ratedBooksFingerprintForCache(books: BookEntry[]): string {
-  return ratedBooksFingerprint(books);
+  return topTwoRatedFingerprint(books);
 }
 
-export function readRecommendationCache(
-  ratedFingerprint: string,
+function sanitizeCachedRecommendations(
+  books: BookSearchResult[],
+  userBooks: BookEntry[],
+): BookSearchResult[] {
+  return onlyWithCover(
+    dedupeByNormalizedTitle(
+      books.filter((b) => !isInLibrary(b, userBooks)),
+    ),
+  ).slice(0, MAX_RECOMMENDATIONS);
+}
+
+/** Read persisted recommendations — no API call, no date expiry. */
+export function readCurrentRecommendationsCache(
   userBooks: BookEntry[],
 ): RecommendationResult | null {
-  const today = getTodayKey();
   const cached = loadRecommendationCache();
-
-  if (
-    cached?.date === today &&
-    cached.ratedFingerprint === ratedFingerprint &&
-    cached.result.books.length > 0
-  ) {
-    const filtered = onlyWithCover(
-      dedupeByNormalizedTitle(
-        cached.result.books.filter((b) => !isInLibrary(b, userBooks)),
-      ),
-    );
-    if (filtered.length > 0) {
-      return {
-        ...cached.result,
-        books: filtered.slice(0, MAX_RECOMMENDATIONS),
-      };
-    }
+  if (!cached?.result.books.length) {
+    const legacy = loadLegacyRecommendationCache();
+    if (!legacy?.result.books.length) return null;
+    const migrated = sanitizeCachedRecommendations(legacy.result.books, userBooks);
+    if (migrated.length === 0) return null;
+    const result = { ...legacy.result, books: migrated };
+    saveRecommendationCache(result, legacy.ratedFingerprint);
+    return result;
   }
 
-  return null;
+  const filtered = sanitizeCachedRecommendations(cached.result.books, userBooks);
+  if (filtered.length === 0) return null;
+
+  return {
+    ...cached.result,
+    books: filtered,
+  };
+}
+
+/** @deprecated Use readCurrentRecommendationsCache — fingerprint no longer gates display. */
+export function readRecommendationCache(
+  _ratedFingerprint: string,
+  userBooks: BookEntry[],
+): RecommendationResult | null {
+  return readCurrentRecommendationsCache(userBooks);
 }
 
 export function writeRecommendationCache(
@@ -1051,6 +1110,37 @@ export function writeRecommendationCache(
   ratedFingerprint: string,
 ): void {
   saveRecommendationCache(result, ratedFingerprint);
+}
+
+export function writeCurrentRecommendationsCache(
+  result: RecommendationResult,
+  userBooks: BookEntry[],
+): void {
+  saveRecommendationCache(result, topTwoRatedFingerprint(userBooks));
+}
+
+export function patchCurrentRecommendationsCache(
+  books: BookSearchResult[],
+  userBooks: BookEntry[],
+): void {
+  const cached = loadRecommendationCache();
+  const sanitized = sanitizeCachedRecommendations(books, userBooks);
+  if (sanitized.length === 0) return;
+
+  const result: RecommendationResult = cached?.result
+    ? { ...cached.result, books: sanitized }
+    : {
+        books: sanitized,
+        mode: "personalized",
+        heading: "Recommended for You",
+        subtitle: "Based on your highest-rated reads",
+        refreshedAt: getTodayKey(),
+      };
+
+  saveRecommendationCache(
+    result,
+    cached?.topRatedFingerprint ?? topTwoRatedFingerprint(userBooks),
+  );
 }
 
 function loadRecommendationCache(): RecommendationCache | null {
@@ -1064,16 +1154,26 @@ function loadRecommendationCache(): RecommendationCache | null {
   }
 }
 
+function loadLegacyRecommendationCache(): LegacyRecommendationCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LEGACY_REC_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as LegacyRecommendationCache;
+  } catch {
+    return null;
+  }
+}
+
 function saveRecommendationCache(
   result: RecommendationResult,
-  ratedFingerprint: string,
+  topRatedFingerprint: string,
 ): void {
   if (typeof window === "undefined") return;
-  const withCovers = onlyWithCover(result.books);
+  const withCovers = onlyWithCover(result.books).slice(0, MAX_RECOMMENDATIONS);
   if (withCovers.length === 0) return;
   const cache: RecommendationCache = {
-    date: getTodayKey(),
-    ratedFingerprint,
+    topRatedFingerprint,
     result: {
       ...result,
       books: withCovers,
@@ -1097,6 +1197,171 @@ function personalizedSubtitle(
     return `Inspired by your reading — including "${seedTitles[0]}"${tasteNote}`;
   }
   return `Inspired by your reading — including "${seedTitles[0]}" and "${seedTitles[1]}"${tasteNote}`;
+}
+
+/** Targeted fetch from one or two seed books — sequential queries to avoid rate limits. */
+async function fetchTargetedRecommendations(
+  seeds: BookEntry[],
+  userBooks: BookEntry[],
+  target = INITIAL_RECOMMENDATION_TARGET,
+): Promise<BookSearchResult[]> {
+  const usedTitleKeys = new Set<string>();
+  const results: BookSearchResult[] = [];
+  const afterYear = recentAfterYear();
+
+  for (const seed of seeds.slice(0, 2)) {
+    if (results.length >= target) break;
+
+    const subjects = genresForBook(seed);
+    const subject = subjects[0] ?? "fiction";
+    const authorName = primaryAuthor(seed.author);
+
+    const plans: RecommendationQueryPlan[] = [
+      {
+        googleQuery: authorQueryFor(seed.author),
+        openLibraryQuery: authorName,
+      },
+      {
+        googleQuery: `${subjectQueryForGenre(subject)} bestseller after:${afterYear}`,
+        openLibraryQuery: `${subject} bestseller`,
+      },
+      {
+        googleQuery: `${subjectQueryForGenre(subject)} classic literature`,
+        openLibraryQuery: `${subject} classic`,
+      },
+    ];
+
+    for (const plan of plans) {
+      if (results.length >= target) break;
+      const batch = filterRecommendations(
+        await fetchWithFallback(plan.googleQuery, plan.openLibraryQuery),
+        userBooks,
+        usedTitleKeys,
+      );
+      for (const book of batch) {
+        const key = normalizeTitle(book.title);
+        if (!key) continue;
+        usedTitleKeys.add(key);
+        results.push(book);
+        if (results.length >= target) break;
+      }
+    }
+  }
+
+  return onlyWithCover(results).slice(0, target);
+}
+
+/** Lightweight discovery mix — at most two parallel queries. */
+async function fetchDiscoveryMixLimited(
+  userBooks: BookEntry[],
+  seed: string,
+  target = INITIAL_RECOMMENDATION_TARGET,
+): Promise<BookSearchResult[]> {
+  const usedTitleKeys = new Set<string>();
+  const results: BookSearchResult[] = [];
+  const afterYear = recentAfterYear();
+  const queries = seededShuffle(
+    [
+      ...RECENT_DISCOVERY_QUERIES.map((q) => `${q} after:${afterYear}`),
+      ...TRENDING_QUERIES,
+    ],
+    seed,
+  ).slice(0, 2);
+
+  for (const query of queries) {
+    if (results.length >= target) break;
+    const openQuery = query.replace(/after:\d+$/, "").trim();
+    const batch = filterRecommendations(
+      await fetchWithFallback(query, openQuery),
+      userBooks,
+      usedTitleKeys,
+    );
+    for (const book of batch) {
+      const key = normalizeTitle(book.title);
+      if (!key) continue;
+      usedTitleKeys.add(key);
+      results.push(book);
+      if (results.length >= target) break;
+    }
+  }
+
+  return onlyWithCover(results).slice(0, target);
+}
+
+/** On-demand full refresh from the user's top two highest-rated books. */
+export async function getRecommendationsFromTopRated(
+  userBooks: BookEntry[],
+): Promise<RecommendationResult> {
+  const today = getTodayKey();
+  const topRated = getTopRatedBooks(userBooks, 2);
+  const tasteProfile = buildTasteProfile(
+    topRated.map((book) => ({
+      ...book,
+      rating: book.rating ?? 3,
+    })),
+  );
+  const tasteHints = topTasteSubjects(tasteProfile, 2);
+
+  let books =
+    topRated.length > 0
+      ? await fetchTargetedRecommendations(
+          topRated,
+          userBooks,
+          INITIAL_RECOMMENDATION_TARGET,
+        )
+      : await fetchDiscoveryMixLimited(
+          userBooks,
+          today,
+          INITIAL_RECOMMENDATION_TARGET,
+        );
+
+  if (books.length < INITIAL_RECOMMENDATION_TARGET) {
+    const classics = await fetchFallbackClassics(
+      userBooks,
+      INITIAL_RECOMMENDATION_TARGET - books.length,
+    );
+    books = onlyWithCover(
+      dedupeByNormalizedTitle(
+        [...books, ...classics].filter((b) => !isInLibrary(b, userBooks)),
+      ),
+    ).slice(0, INITIAL_RECOMMENDATION_TARGET);
+  }
+
+  if (books.length < INITIAL_RECOMMENDATION_TARGET) {
+    const discovery = await fetchDiscoveryMixLimited(
+      userBooks,
+      `${today}-fill`,
+      INITIAL_RECOMMENDATION_TARGET - books.length,
+    );
+    books = onlyWithCover(
+      dedupeByNormalizedTitle(
+        [...books, ...discovery].filter((b) => !isInLibrary(b, userBooks)),
+      ),
+    ).slice(0, INITIAL_RECOMMENDATION_TARGET);
+  }
+
+  if (tasteProfile.weightedSubjects.size > 0 && books.length > 1) {
+    books = onlyWithCover(
+      sortByTaste(onlyRecommendable(books), tasteProfile),
+    ).slice(0, INITIAL_RECOMMENDATION_TARGET);
+  }
+
+  const mode: RecommendationMode =
+    topRated.length > 0 ? "personalized" : "trending";
+  const heading =
+    topRated.length > 0 ? "Recommended for You" : "Discover Your Next Read";
+  const subtitle =
+    topRated.length > 0
+      ? personalizedSubtitle(topRated, tasteHints)
+      : "Rate completed books 4+ stars for sharper picks";
+
+  return {
+    books,
+    mode,
+    heading,
+    subtitle,
+    refreshedAt: today,
+  };
 }
 
 export async function getRecommendations(
@@ -1265,49 +1530,57 @@ export async function fetchNextRecommendation(
 
   const seed = `${getTodayKey()}-${Date.now()}`;
   const afterYear = recentAfterYear();
-  const historySeeds = pickRandomHistorySeeds(userBooks, seed, 2);
-  const profile = buildTasteProfile(
-    (historySeeds.length > 0 ? historySeeds : userBooks).map((book) => ({
-      ...book,
-      rating: book.rating ?? 3,
-    })),
-  );
+  const topRated = getTopRatedBooks(userBooks, 2);
+  const historySeeds =
+    topRated.length > 0
+      ? topRated
+      : pickRandomHistorySeeds(userBooks, seed, 1);
 
   for (const book of historySeeds) {
     const subjects = genresForBook(book);
     const subject = subjects[0] ?? "fiction";
     const queries = [
-      `${subjectQueryForGenre(subject)} bestseller after:${afterYear}`,
-      subjectQueryForGenre(subject),
-      authorQueryFor(book.author),
+      {
+        google: authorQueryFor(book.author),
+        openLibrary: primaryAuthor(book.author),
+      },
+      {
+        google: `${subjectQueryForGenre(subject)} bestseller after:${afterYear}`,
+        openLibrary: `${subject} bestseller`,
+      },
+      {
+        google: subjectQueryForGenre(subject),
+        openLibrary: subject,
+      },
     ];
 
-    for (const query of queries) {
-      const openLibraryQuery = query.startsWith("inauthor:")
-        ? primaryAuthor(book.author)
-        : subject;
-      const batch = await fetchWithFallback(query, openLibraryQuery);
+    for (const { google, openLibrary } of queries) {
+      let batch = await fetchWithFallback(google, openLibrary);
+      for (const candidate of batch) {
+        if (accept(candidate)) return candidate;
+      }
+
+      batch = await fetchWithFallback(google, openLibrary, { skipGoogle: true });
       for (const candidate of batch) {
         if (accept(candidate)) return candidate;
       }
     }
   }
 
-  for (const query of seededShuffle(
-    [
-      ...RECENT_DISCOVERY_QUERIES.map((q) => `${q} after:${afterYear}`),
-      ...TRENDING_QUERIES,
-    ],
-    seed,
-  )) {
-    const batch = await fetchWithFallback(query, query);
+  for (const query of seededShuffle(TRENDING_QUERIES, seed).slice(0, 2)) {
+    let batch = await fetchWithFallback(query, query);
+    for (const book of batch) {
+      if (accept(book)) return book;
+    }
+
+    batch = await fetchWithFallback(query, query, { skipGoogle: true });
     for (const book of batch) {
       if (accept(book)) return book;
     }
   }
 
   const classics = shuffleArray([...CLASSICS_POOL]);
-  for (const classic of classics) {
+  for (const classic of classics.slice(0, 4)) {
     const titleKey = normalizeTitle(classic.title);
     if (!titleKey || usedTitleKeys.has(titleKey)) continue;
     if (userBooks.some((b) => normalizeTitle(b.title) === titleKey)) continue;

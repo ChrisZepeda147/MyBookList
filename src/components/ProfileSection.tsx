@@ -181,6 +181,7 @@ export function ProfileSection() {
               src={avatarDisplaySrc}
               alt={avatarName}
               fill
+              sizes="96px"
               className="object-cover"
               unoptimized={avatarDisplaySrc.startsWith("blob:")}
             />

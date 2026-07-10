@@ -10,6 +10,10 @@ import {
   useState,
 } from "react";
 import { clampRating } from "@/lib/ratings";
+import {
+  scheduleRecommendationsRefresh,
+  shouldRefreshRecommendationsOnRating,
+} from "@/lib/recommendation-cache-client";
 import type { BookEntry, ReadingStatus, UserProfile } from "@/lib/types";
 import { DEFAULT_PROFILE } from "@/lib/types";
 import {
@@ -181,6 +185,13 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
 
       setBooks((prev) => [optimistic, ...prev]);
 
+      if (
+        book.status === "completed" &&
+        shouldRefreshRecommendationsOnRating(book.rating ?? null)
+      ) {
+        scheduleRecommendationsRefresh([optimistic, ...booksRef.current]);
+      }
+
       if (book.status === "completed" && typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("book-completed"));
       }
@@ -277,7 +288,15 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     (id: string, rating: number | null) => {
       const book = booksRef.current.find((b) => b.id === id);
       if (!book || book.status !== "completed") return;
-      updateBook(id, { rating: rating == null ? null : clampRating(rating) });
+      const nextRating = rating == null ? null : clampRating(rating);
+      updateBook(id, { rating: nextRating });
+
+      if (shouldRefreshRecommendationsOnRating(nextRating)) {
+        const nextBooks = booksRef.current.map((entry) =>
+          entry.id === id ? { ...entry, rating: nextRating } : entry,
+        );
+        scheduleRecommendationsRefresh(nextBooks);
+      }
     },
     [updateBook],
   );

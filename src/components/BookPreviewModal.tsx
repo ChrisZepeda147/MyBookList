@@ -15,6 +15,7 @@ import {
 } from "@/lib/book-descriptions";
 import {
   fetchBookMetadataClient,
+  fetchOpenLibraryDescriptionClient,
   fetchVolumeDescriptionClient,
 } from "@/lib/fetch-book-metadata-client";
 import { normalizeTitle, primaryAuthor } from "@/lib/google-books-client";
@@ -68,8 +69,10 @@ export function BookPreviewModal({
 
   const canRate = status === "completed";
   const alreadyAdded = isAlreadyInLibrary(book, books);
-  const volumeId = book.id.startsWith("ol-") ? null : book.id;
-  const waitingForDescription = Boolean(volumeId) && descriptionLoading;
+  const isOpenLibraryBook = book.id.startsWith("ol-");
+  const openLibraryWorkKey = isOpenLibraryBook ? book.id.slice(3) : null;
+  const googleVolumeId = isOpenLibraryBook ? null : book.id;
+  const waitingForDescription = descriptionLoading;
 
   function animateClose(callback: () => void) {
     setIsClosing(true);
@@ -114,41 +117,70 @@ export function BookPreviewModal({
   }, [book.id, book.description]);
 
   useEffect(() => {
-    const volumeId = book.id.startsWith("ol-") ? null : book.id;
-    if (!volumeId) return;
+    const needsDescription = !hasRealDescription(book.description);
+    if (!needsDescription) {
+      setDescription(ensureBookDescription(book.description));
+      setDescriptionLoading(false);
+      return;
+    }
 
     let cancelled = false;
-    const showLoading = !hasRealDescription(book.description);
-    if (showLoading) setDescriptionLoading(true);
+    setDescriptionLoading(true);
 
     void (async () => {
-      const direct = await fetchVolumeDescriptionClient(volumeId);
-      if (cancelled) return;
+      if (openLibraryWorkKey) {
+        const openLibraryDescription = await fetchOpenLibraryDescriptionClient({
+          title: book.title,
+          author: book.author,
+          workKey: openLibraryWorkKey,
+        });
+        if (cancelled) return;
+        if (hasRealDescription(openLibraryDescription)) {
+          setDescription(openLibraryDescription!);
+          return;
+        }
+      }
 
-      if (hasRealDescription(direct)) {
-        setDescription(direct!);
-        setDescriptionLoading(false);
-        return;
+      if (googleVolumeId) {
+        const direct = await fetchVolumeDescriptionClient(googleVolumeId, {
+          title: book.title,
+          author: book.author,
+        });
+        if (cancelled) return;
+        if (hasRealDescription(direct)) {
+          setDescription(direct!);
+          return;
+        }
       }
 
       const meta = await fetchBookMetadataClient({
         title: book.title,
         author: book.author,
-        googleBooksId: volumeId,
+        googleBooksId: googleVolumeId,
         isbn: book.isbn13 ?? book.isbn10 ?? null,
+        openLibraryWorkKey,
       });
 
       if (!cancelled && meta && hasRealDescription(meta.description)) {
         setDescription(meta.description);
       }
     })().finally(() => {
-      if (!cancelled && showLoading) setDescriptionLoading(false);
+      if (!cancelled) setDescriptionLoading(false);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [book.id, book.title, book.author, book.isbn13, book.isbn10]);
+  }, [
+    book.id,
+    book.title,
+    book.author,
+    book.description,
+    book.isbn13,
+    book.isbn10,
+    googleVolumeId,
+    openLibraryWorkKey,
+  ]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {

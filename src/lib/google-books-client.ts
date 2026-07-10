@@ -1,5 +1,6 @@
 import type { BookEntry, BookSearchResult } from "@/lib/types";
 import { getGoogleBooksApiKey } from "@/lib/google-books-api-key";
+import { logGoogleBooksServerFetchFailure } from "@/lib/google-books-errors";
 import {
   bestDescriptionFromTexts,
   cleanDescription,
@@ -363,6 +364,7 @@ export async function fetchGoogleVolumesSearch(
   });
 
   if (!response.ok) {
+    logGoogleBooksServerFetchFailure(query, `HTTP ${response.status}`);
     return { totalItems: 0, items: [] };
   }
 
@@ -394,7 +396,10 @@ export async function fetchGoogleVolumeById(
     headers: { Accept: "application/json" },
     cache: "no-store",
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    logGoogleBooksServerFetchFailure(id, `HTTP ${response.status}`);
+    return null;
+  }
   return (await response.json()) as GoogleVolume;
 }
 

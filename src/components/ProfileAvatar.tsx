@@ -7,6 +7,12 @@ const SIZE_CLASS = {
   lg: "h-16 w-16 text-2xl",
 } as const;
 
+const SIZE_SIZES = {
+  sm: "32px",
+  md: "48px",
+  lg: "64px",
+} as const;
+
 interface ProfileAvatarProps {
   name: string;
   avatarUrl?: string | null;
@@ -34,6 +40,7 @@ export function ProfileAvatar({
           src={src}
           alt={`${name}'s profile photo`}
           fill
+          sizes={SIZE_SIZES[size]}
           className="object-cover"
           unoptimized
         />
