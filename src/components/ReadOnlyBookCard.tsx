@@ -6,6 +6,7 @@ import type { BookEntry } from "@/lib/types";
 import { StarRating } from "@/components/StarRating";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadges } from "@/components/CategoryBadges";
+import { ListBookDescription } from "@/components/ListBookDescription";
 import { bookHasDisplayableCover } from "@/lib/cover-url";
 import { ensureBookDescription } from "@/lib/book-descriptions";
 
@@ -30,6 +31,7 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           src={book.coverUrl!}
           alt={book.title}
           fill
+          sizes="128px"
           className="object-cover"
           unoptimized
         />
@@ -63,13 +65,22 @@ export function ReadOnlyBookCard({ book, onSelect }: ReadOnlyBookCardProps) {
           )}
         </button>
 
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(book)}
-          className="book-description-text w-full min-w-0 text-left text-sm text-slate-500"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect(book);
+            }
+          }}
+          className="book-card-description-slot w-full cursor-pointer text-left"
         >
-          {ensureBookDescription(book.description)}
-        </button>
+          <ListBookDescription
+            description={ensureBookDescription(book.description)}
+          />
+        </div>
 
         <div className="mt-auto flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
