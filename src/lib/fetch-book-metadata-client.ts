@@ -4,6 +4,7 @@ export async function fetchBookMetadataClient(input: {
   title: string;
   author: string;
   googleBooksId?: string | null;
+  isbn?: string | null;
 }): Promise<BookMetadataResult | null> {
   const params = new URLSearchParams({
     title: input.title,
@@ -11,6 +12,9 @@ export async function fetchBookMetadataClient(input: {
   });
   if (input.googleBooksId) {
     params.set("id", input.googleBooksId);
+  }
+  if (input.isbn) {
+    params.set("isbn", input.isbn);
   }
 
   try {

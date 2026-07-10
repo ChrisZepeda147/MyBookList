@@ -5,10 +5,12 @@ export async function GET(request: NextRequest) {
   const title = request.nextUrl.searchParams.get("title") ?? "";
   const author = request.nextUrl.searchParams.get("author") ?? "";
   const googleBooksId = request.nextUrl.searchParams.get("id");
+  const isbn = request.nextUrl.searchParams.get("isbn");
+  const lite = request.nextUrl.searchParams.get("lite") === "1";
 
-  if (!title.trim() && !googleBooksId) {
+  if (!title.trim() && !googleBooksId && !isbn) {
     return NextResponse.json(
-      { error: "title or id is required" },
+      { error: "title, id, or isbn is required" },
       { status: 400 },
     );
   }
@@ -18,6 +20,8 @@ export async function GET(request: NextRequest) {
       title,
       author,
       googleBooksId,
+      isbn,
+      lite,
     });
 
     if (!metadata) {

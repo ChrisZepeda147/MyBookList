@@ -59,6 +59,8 @@ export interface BookSearchResult {
   categories: string[];
   editionLabel?: string;
   publishedDate?: string | null;
+  isbn13?: string | null;
+  isbn10?: string | null;
 }
 
 export interface BookPrefill {

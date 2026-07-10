@@ -30,6 +30,10 @@ export interface GoogleVolume {
     publishedDate?: string;
     categories?: string[];
     language?: string;
+    industryIdentifiers?: Array<{
+      type?: string;
+      identifier?: string;
+    }>;
     imageLinks?: {
       thumbnail?: string;
       smallThumbnail?: string;
@@ -37,9 +41,13 @@ export interface GoogleVolume {
   };
 }
 
-export interface GoogleBooksResponse {
+export interface GoogleBooksSearchResponse {
+  totalItems?: number;
   items?: GoogleVolume[];
 }
+
+/** Google Books search cap (API maximum). */
+export const GOOGLE_BOOKS_SEARCH_MAX_RESULTS = 40;
 
 export {
   bookHasDisplayableCover,
@@ -145,7 +153,43 @@ export function mapGoogleVolume(item: GoogleVolume): BookSearchResult {
     categories: (info?.categories ?? []).map((c) => c.trim()).filter(Boolean),
     editionLabel: editionLabel(item),
     publishedDate: info?.publishedDate ?? null,
+    isbn13: isbn13FromVolume(item),
+    isbn10: isbn10FromVolume(item),
   };
+}
+
+export function isbn13FromVolume(volume: GoogleVolume): string | null {
+  const ids = volume.volumeInfo?.industryIdentifiers ?? [];
+  for (const entry of ids) {
+    if (entry.type === "ISBN_13" && entry.identifier?.trim()) {
+      return normalizeIsbn(entry.identifier);
+    }
+  }
+  return null;
+}
+
+export function isbn10FromVolume(volume: GoogleVolume): string | null {
+  const ids = volume.volumeInfo?.industryIdentifiers ?? [];
+  for (const entry of ids) {
+    if (entry.type === "ISBN_10" && entry.identifier?.trim()) {
+      return normalizeIsbn(entry.identifier);
+    }
+  }
+  return null;
+}
+
+export function primaryIsbnFromVolume(volume: GoogleVolume): string | null {
+  return isbn13FromVolume(volume) ?? isbn10FromVolume(volume);
+}
+
+export function normalizeIsbn(raw: string): string {
+  return raw.replace(/[^0-9X]/gi, "").toUpperCase();
+}
+
+/** Strict title-only Google Books query: intitle:"exact phrase". */
+export function buildStrictIntitleQuery(phrase: string): string {
+  const escaped = phrase.replace(/"/g, '\\"');
+  return `intitle:"${escaped}"`;
 }
 
 export function pickBestVolume(volumes: GoogleVolume[]): GoogleVolume | null {
@@ -240,8 +284,8 @@ export function normalizeBookSearchQuery(raw: string): string {
 }
 
 function titleRelevanceScore(title: string, query: string): number {
-  const normalizedQuery = normalizeTitle(query);
-  const normalizedTitle = normalizeTitle(title);
+  const normalizedQuery = normalizeTitle(query).replace(/bond/g, "bound");
+  const normalizedTitle = normalizeTitle(title).replace(/bond/g, "bound");
   if (!normalizedQuery || !normalizedTitle) return 0;
 
   if (normalizedTitle === normalizedQuery) return 100;
@@ -269,6 +313,21 @@ function titleRelevanceScore(title: string, query: string): number {
   return wordHits > 0 ? 40 + wordHits * 15 : 0;
 }
 
+export function mergeGoogleVolumes(
+  existing: GoogleVolume[],
+  incoming: GoogleVolume[],
+): GoogleVolume[] {
+  const seen = new Set(existing.map((volume) => volume.id));
+  const merged = [...existing];
+  for (const volume of incoming) {
+    if (!seen.has(volume.id)) {
+      seen.add(volume.id);
+      merged.push(volume);
+    }
+  }
+  return merged;
+}
+
 /** Preserve Google's relevance order while nudging exact title matches upward. */
 export function rankSearchResultsByRelevance(
   books: BookSearchResult[],
@@ -287,10 +346,10 @@ export function rankSearchResultsByRelevance(
     .map(({ book }) => book);
 }
 
-export async function fetchGoogleVolumes(
+export async function fetchGoogleVolumesSearch(
   query: string,
-  maxResults = 20,
-): Promise<GoogleVolume[]> {
+  maxResults = GOOGLE_BOOKS_SEARCH_MAX_RESULTS,
+): Promise<GoogleBooksSearchResponse> {
   const params = buildGoogleParams({
     q: query,
     maxResults: String(maxResults),
@@ -301,20 +360,40 @@ export async function fetchGoogleVolumes(
 
   const response = await fetch(`${GOOGLE_BOOKS_API}?${params.toString()}`, {
     headers: { Accept: "application/json" },
+    cache: "no-store",
   });
 
-  if (!response.ok) return [];
+  if (!response.ok) {
+    return { totalItems: 0, items: [] };
+  }
 
-  const data = (await response.json()) as GoogleBooksResponse;
+  return (await response.json()) as GoogleBooksSearchResponse;
+}
+
+export async function fetchGoogleVolumes(
+  query: string,
+  maxResults = GOOGLE_BOOKS_SEARCH_MAX_RESULTS,
+): Promise<GoogleVolume[]> {
+  const data = await fetchGoogleVolumesSearch(query, maxResults);
+  return data.items ?? [];
+}
+
+export async function fetchGoogleVolumesByIsbn(
+  isbn: string,
+): Promise<GoogleVolume[]> {
+  const normalized = normalizeIsbn(isbn);
+  if (!normalized) return [];
+  const data = await fetchGoogleVolumesSearch(`isbn:${normalized}`);
   return data.items ?? [];
 }
 
 export async function fetchGoogleVolumeById(
   id: string,
 ): Promise<GoogleVolume | null> {
-  const params = buildGoogleParams();
+  const params = buildGoogleParams({ projection: "full" });
   const response = await fetch(`${GOOGLE_BOOKS_API}/${id}?${params}`, {
     headers: { Accept: "application/json" },
+    cache: "no-store",
   });
   if (!response.ok) return null;
   return (await response.json()) as GoogleVolume;
@@ -326,8 +405,8 @@ export async function searchEditionsForBook(
 ): Promise<GoogleVolume[]> {
   const primary = primaryAuthor(author);
   const volumes = await fetchGoogleVolumes(
-    `intitle:"${title}" inauthor:"${primary}"`,
-    25,
+    `intitle:"${title.replace(/"/g, '\\"')}" inauthor:"${primary.replace(/"/g, '\\"')}"`,
+    GOOGLE_BOOKS_SEARCH_MAX_RESULTS,
   );
 
   const matched = volumes.filter((v) => {
@@ -346,7 +425,11 @@ export async function searchEditionsForBook(
 
 export function volumeToBookPatch(
   volume: GoogleVolume,
-): Partial<BookEntry> & { pageCount: number | null } {
+): Partial<BookEntry> & {
+  pageCount: number | null;
+  isbn13?: string | null;
+  isbn10?: string | null;
+} {
   const mapped = mapGoogleVolume(volume);
   return {
     pageCount: mapped.pageCount,
@@ -354,6 +437,8 @@ export function volumeToBookPatch(
     categories: mapped.categories,
     coverUrl: mapped.coverUrl,
     googleBooksId: volume.id,
+    isbn13: mapped.isbn13,
+    isbn10: mapped.isbn10,
   };
 }
 

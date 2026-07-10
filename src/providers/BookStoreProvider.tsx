@@ -12,8 +12,11 @@ import {
 import { clampRating } from "@/lib/ratings";
 import type { BookEntry, ReadingStatus, UserProfile } from "@/lib/types";
 import { DEFAULT_PROFILE } from "@/lib/types";
-import { backfillBookMetadata, backfillSingleBookMetadata } from "@/lib/backfill-pages";
-import { hasRealDescription } from "@/lib/book-descriptions";
+import {
+  bookNeedsMetadataBackfill,
+  scheduleLibraryMetadataBackfill,
+  backfillSingleBookMetadata,
+} from "@/lib/backfill-pages";
 import { resolveBookCategoryTags } from "@/lib/categories";
 import { createClient } from "@/lib/supabase/client";
 import { formatDbError } from "@/lib/supabase-errors";
@@ -115,7 +118,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         setProfile(nextProfile);
         setBooks(nextBooks);
 
-        void backfillBookMetadata(nextBooks, (id, updates) => {
+        scheduleLibraryMetadataBackfill(nextBooks, (id, updates) => {
           void applyBookPatch(id, updates);
         });
       } catch (err) {
@@ -194,7 +197,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
             ...prev.filter((b) => b.id !== tempId),
           ]);
 
-          if (!hasRealDescription(entry.description)) {
+          if (bookNeedsMetadataBackfill(entry)) {
             void backfillSingleBookMetadata(entry, (id, updates) => {
               void applyBookPatch(id, updates);
             });

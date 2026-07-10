@@ -9,16 +9,148 @@ import {
   resolveBookCategoryTags,
 } from "@/lib/categories";
 import { isPlausiblePageCount } from "@/lib/page-count";
+import { isGoogleBooksCircuitOpen } from "@/lib/google-books-circuit";
+
+const BACKFILL_DELAY_MS = 400;
+const BACKFILL_DEBOUNCE_MS = 60_000;
+const BACKFILL_RETRY_MS = 24 * 60 * 60 * 1000;
+const BACKFILL_MAX_BOOKS_PER_RUN = 12;
+const BACKFILL_SESSION_STORAGE_KEY = "book_metadata_backfill_v1";
+const BACKFILL_ATTEMPTS_STORAGE_KEY = "book_metadata_backfill_attempts_v1";
+
+type BackfillSessionState = {
+  fingerprint: string;
+  attemptedAt: number;
+  bookIds: string[];
+};
+
+type BackfillAttempts = Record<string, number>;
+
+let backfillDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let backfillInFlight = false;
+
+/** True when description or page count still needs an API lookup. */
+export function bookNeedsMetadataBackfill(book: BookEntry): boolean {
+  if (!hasRealDescription(book.description)) return true;
+
+  const pages = book.pageCount ?? 0;
+  if (
+    !book.pageCountLocked &&
+    (pages <= 0 || !isPlausiblePageCount(pages))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function filterBooksNeedingMetadataBackfill(
+  books: BookEntry[],
+): BookEntry[] {
+  return books.filter(bookNeedsMetadataBackfill);
+}
+
+function backfillFingerprint(books: BookEntry[]): string {
+  return filterBooksNeedingMetadataBackfill(books)
+    .map((book) => book.id)
+    .sort()
+    .join("|");
+}
+
+function readBackfillSession(): BackfillSessionState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(BACKFILL_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as BackfillSessionState;
+  } catch {
+    return null;
+  }
+}
+
+function writeBackfillSession(state: BackfillSessionState): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(BACKFILL_SESSION_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore quota errors.
+  }
+}
+
+function readBackfillAttempts(): BackfillAttempts {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(BACKFILL_ATTEMPTS_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as BackfillAttempts;
+  } catch {
+    return {};
+  }
+}
+
+function writeBackfillAttempts(attempts: BackfillAttempts): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      BACKFILL_ATTEMPTS_STORAGE_KEY,
+      JSON.stringify(attempts),
+    );
+  } catch {
+    // Ignore quota errors.
+  }
+}
+
+function recordBackfillAttempt(bookId: string): void {
+  const attempts = readBackfillAttempts();
+  attempts[bookId] = Date.now();
+  writeBackfillAttempts(attempts);
+}
+
+function wasBookRecentlyBackfilled(bookId: string): boolean {
+  const attemptedAt = readBackfillAttempts()[bookId];
+  return attemptedAt != null && Date.now() - attemptedAt < BACKFILL_RETRY_MS;
+}
+
+function booksEligibleForBackfill(books: BookEntry[]): BookEntry[] {
+  return filterBooksNeedingMetadataBackfill(books).filter(
+    (book) => !wasBookRecentlyBackfilled(book.id),
+  );
+}
+
+function shouldSkipLibraryBackfill(books: BookEntry[]): boolean {
+  const eligible = booksEligibleForBackfill(books);
+  if (eligible.length === 0) return true;
+  if (isGoogleBooksCircuitOpen()) return true;
+
+  const fingerprint = backfillFingerprint(books);
+  const session = readBackfillSession();
+  if (!session) return false;
+
+  const recentlyAttempted =
+    session.fingerprint === fingerprint &&
+    Date.now() - session.attemptedAt < BACKFILL_DEBOUNCE_MS;
+
+  if (!recentlyAttempted) return false;
+
+  const attempted = new Set(session.bookIds);
+  return eligible.every((book) => attempted.has(book.id));
+}
 
 async function fetchMetadataFromApi(
   book: BookEntry,
+  options?: { lite?: boolean },
 ): Promise<BookMetadataResult | null> {
+  if (isGoogleBooksCircuitOpen()) return null;
+
   const params = new URLSearchParams({
     title: book.title,
     author: book.author,
   });
   if (book.googleBooksId) {
     params.set("id", book.googleBooksId);
+  }
+  if (options?.lite) {
+    params.set("lite", "1");
   }
 
   const response = await fetch(`/api/books/metadata?${params.toString()}`, {
@@ -63,25 +195,24 @@ function applyMetadata(
   };
 }
 
-/** Re-fetch Google metadata for a single book (e.g. after add). */
-export async function backfillSingleBookMetadata(
+function buildMetadataPatch(
   book: BookEntry,
-  onUpdate: (id: string, updates: Partial<BookEntry>) => void,
-): Promise<void> {
-  const meta = await fetchMetadataFromApi(book);
-  if (!meta) return;
-
-  const updates = applyMetadata(book, meta);
+  updates: Partial<BookEntry>,
+): Partial<BookEntry> {
   const patch: Partial<BookEntry> = {};
 
-  if (!hasRealDescription(book.description) && hasRealDescription(updates.description ?? null)) {
+  if (
+    !hasRealDescription(book.description) &&
+    hasRealDescription(updates.description ?? null)
+  ) {
     patch.description = updates.description;
   }
 
   if (
     !book.pageCountLocked &&
     (book.pageCount == null || book.pageCount <= 0) &&
-    (updates.pageCount ?? 0) > 0
+    (updates.pageCount ?? 0) > 0 &&
+    isPlausiblePageCount(updates.pageCount ?? 0)
   ) {
     patch.pageCount = updates.pageCount;
   }
@@ -102,24 +233,50 @@ export async function backfillSingleBookMetadata(
     patch.categories = updates.categories;
   }
 
+  return patch;
+}
+
+/** Re-fetch Google metadata for a single book (e.g. after add). */
+export async function backfillSingleBookMetadata(
+  book: BookEntry,
+  onUpdate: (id: string, updates: Partial<BookEntry>) => void,
+): Promise<void> {
+  if (!bookNeedsMetadataBackfill(book)) return;
+  if (isGoogleBooksCircuitOpen()) return;
+
+  const meta = await fetchMetadataFromApi(book);
+  if (!meta) return;
+
+  const updates = applyMetadata(book, meta);
+  const patch = buildMetadataPatch(book, updates);
+
   if (Object.keys(patch).length > 0) {
     onUpdate(book.id, patch);
   }
 }
 
-/** Re-fetch Google metadata for every book and update stored tags. */
-export async function backfillBookMetadata(
+async function runLibraryMetadataBackfill(
   books: BookEntry[],
   onUpdate: (id: string, updates: Partial<BookEntry>) => void,
 ): Promise<void> {
-  const ordered = [...books].sort((a, b) => {
-    const aMissing = hasRealDescription(a.description) ? 0 : 1;
-    const bMissing = hasRealDescription(b.description) ? 0 : 1;
-    return bMissing - aMissing;
-  });
+  const ordered = booksEligibleForBackfill(books)
+    .sort((a, b) => {
+      const aMissing = hasRealDescription(a.description) ? 0 : 1;
+      const bMissing = hasRealDescription(b.description) ? 0 : 1;
+      return bMissing - aMissing;
+    })
+    .slice(0, BACKFILL_MAX_BOOKS_PER_RUN);
+
+  if (ordered.length === 0) return;
+
+  const attemptedIds: string[] = [];
 
   for (const book of ordered) {
-    const meta = await fetchMetadataFromApi(book);
+    if (isGoogleBooksCircuitOpen()) break;
+
+    attemptedIds.push(book.id);
+    recordBackfillAttempt(book.id);
+    const meta = await fetchMetadataFromApi(book, { lite: true });
 
     if (meta) {
       const updates = applyMetadata(book, meta);
@@ -132,31 +289,14 @@ export async function backfillBookMetadata(
         isPlausiblePageCount(newPages) &&
         (currentPages <= 0 || !isPlausiblePageCount(currentPages));
 
-      const apiChanged =
-        updates.apiCategories?.join("|") !==
-        (book.apiCategories ?? []).join("|");
-      const categoriesChanged =
-        updates.categories?.join("|") !== book.categories.join("|");
-      const needsDescription = !hasRealDescription(book.description);
-      const descriptionChanged =
-        needsDescription && hasRealDescription(updates.description ?? null);
+      const patch = buildMetadataPatch(book, updates);
 
-      if (
-        shouldUpdatePages ||
-        apiChanged ||
-        categoriesChanged ||
-        descriptionChanged
-      ) {
-        onUpdate(book.id, {
-          ...(shouldUpdatePages ? { pageCount: newPages } : {}),
-          ...(updates.apiCategories
-            ? { apiCategories: updates.apiCategories }
-            : {}),
-          ...(updates.categories ? { categories: updates.categories } : {}),
-          ...(descriptionChanged ? { description: updates.description } : {}),
-          coverUrl: updates.coverUrl ?? book.coverUrl,
-          googleBooksId: updates.googleBooksId ?? book.googleBooksId,
-        });
+      if (shouldUpdatePages) {
+        patch.pageCount = newPages;
+      }
+
+      if (Object.keys(patch).length > 0) {
+        onUpdate(book.id, patch);
       }
     } else {
       const categories = resolveBookCategoryTags(
@@ -171,8 +311,47 @@ export async function backfillBookMetadata(
       }
     }
 
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, BACKFILL_DELAY_MS));
   }
+
+  writeBackfillSession({
+    fingerprint: backfillFingerprint(books),
+    attemptedAt: Date.now(),
+    bookIds: attemptedIds,
+  });
+}
+
+/**
+ * Debounced library backfill — only books missing metadata, skipped when
+ * recently attempted for the same set (e.g. page refresh).
+ */
+export function scheduleLibraryMetadataBackfill(
+  books: BookEntry[],
+  onUpdate: (id: string, updates: Partial<BookEntry>) => void,
+): void {
+  if (shouldSkipLibraryBackfill(books)) return;
+
+  if (backfillDebounceTimer) {
+    clearTimeout(backfillDebounceTimer);
+  }
+
+  backfillDebounceTimer = setTimeout(() => {
+    backfillDebounceTimer = null;
+    if (backfillInFlight) return;
+
+    backfillInFlight = true;
+    void runLibraryMetadataBackfill(books, onUpdate).finally(() => {
+      backfillInFlight = false;
+    });
+  }, 1_500);
+}
+
+/** @deprecated Use scheduleLibraryMetadataBackfill */
+export async function backfillBookMetadata(
+  books: BookEntry[],
+  onUpdate: (id: string, updates: Partial<BookEntry>) => void,
+): Promise<void> {
+  await runLibraryMetadataBackfill(books, onUpdate);
 }
 
 /** @deprecated Use backfillBookMetadata */

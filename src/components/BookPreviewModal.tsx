@@ -116,6 +116,7 @@ export function BookPreviewModal({
       title: book.title,
       author: book.author,
       googleBooksId: book.id.startsWith("ol-") ? null : book.id,
+      isbn: book.isbn13 ?? book.isbn10 ?? null,
     })
       .then((meta) => {
         if (cancelled || !meta?.description) return;
