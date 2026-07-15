@@ -273,6 +273,11 @@ export function ReadingSessionView({
               <p className="mt-2 text-lg text-white/50">
                 by {bookAuthor}
               </p>
+              {(currentPage ?? 0) > 0 && (
+                <p className="mt-3 inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-sm font-medium text-emerald-200 ring-1 ring-emerald-400/30">
+                  Page {currentPage}
+                </p>
+              )}
 
               <p
                 className="font-display mt-8 text-[3.8125rem] font-semibold leading-none tracking-[0.03em] text-white tabular-nums sm:text-[4.8125rem]"
