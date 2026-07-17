@@ -44,6 +44,44 @@ export async function celebrateSessionSaved(streak: number): Promise<void> {
   );
 }
 
+/** Quick burst when a live timer crosses Gold / Red / Diamond. */
+export async function celebrateStarMilestone(
+  tier: "gold" | "red" | "diamond",
+): Promise<void> {
+  const confetti = await loadConfetti();
+  const colors =
+    tier === "gold"
+      ? ["#FFD700", "#FFC125", "#FFEC8B", "#DAA520"]
+      : tier === "red"
+        ? ["#ef4444", "#f87171", "#dc2626", "#fecaca"]
+        : ["#67e8f9", "#38bdf8", "#e0f2fe", "#a5f3fc", "#ffffff"];
+
+  confetti(
+    baseOptions({
+      particleCount: tier === "diamond" ? 120 : 80,
+      spread: tier === "diamond" ? 86 : 68,
+      startVelocity: 46,
+      origin: { x: 0.5, y: 0.55 },
+      colors,
+      scalar: tier === "diamond" ? 1.15 : 1,
+    }),
+  );
+
+  if (tier === "diamond") {
+    window.setTimeout(() => {
+      confetti(
+        baseOptions({
+          particleCount: 40,
+          spread: 100,
+          startVelocity: 28,
+          origin: { x: 0.5, y: 0.45 },
+          colors,
+        }),
+      );
+    }, 220);
+  }
+}
+
 async function celebrateStreakGold(confetti: ConfettiFn): Promise<void> {
   const gold = ["#FFD700", "#FFC125", "#FFEC8B", "#DAA520", "#FFF8DC"];
   const duration = 2200;

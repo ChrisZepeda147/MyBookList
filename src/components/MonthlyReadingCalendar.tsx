@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useReadingSessionLog } from "@/hooks/useReadingSessionLog";
 import {
+  starTierForDay,
+  type DailyStarTier,
+} from "@/lib/daily-reading-stars";
+import {
   countReadingDaysInMonth,
   getMonthCalendarCells,
   isSameMonth,
@@ -11,11 +15,64 @@ import {
   WEEKDAY_LABELS,
 } from "@/lib/reading-calendar";
 
+function CalendarDayStar({ tier }: { tier: Exclude<DailyStarTier, "none"> }) {
+  if (tier === "gold") {
+    return (
+      <Star
+        className="h-3 w-3 fill-amber-400 text-amber-500 sm:h-3.5 sm:w-3.5"
+        aria-label="Gold star — any reading logged"
+      />
+    );
+  }
+
+  if (tier === "red") {
+    return (
+      <Star
+        className="h-3 w-3 fill-red-500 text-red-600 sm:h-3.5 sm:w-3.5"
+        aria-label="Red star — 15+ minutes"
+      />
+    );
+  }
+
+  return (
+    <Star
+      className="daily-star-diamond h-3.5 w-3.5 fill-sky-100 text-cyan-400 sm:h-4 sm:w-4"
+      aria-label="Diamond star — 30+ minutes"
+    />
+  );
+}
+
+function cellClasses(tier: DailyStarTier, isToday: boolean): string {
+  const todayRing =
+    isToday ? "ring-1 ring-blue-500 ring-offset-1" : "";
+
+  if (tier === "none") {
+    return `${todayRing} bg-slate-50 text-slate-600`;
+  }
+
+  return `${todayRing} bg-amber-50 text-amber-800`;
+}
+
+function tierTitle(dateKey: string, tier: DailyStarTier, minutes: number): string {
+  if (tier === "none") {
+    return `No reading logged on ${dateKey}`;
+  }
+  if (tier === "gold") {
+    return minutes > 0
+      ? `Gold star on ${dateKey} (${minutes.toFixed(0)} min)`
+      : `Gold star on ${dateKey} (pages logged)`;
+  }
+  if (tier === "red") {
+    return `Red star on ${dateKey} (${minutes.toFixed(0)} min)`;
+  }
+  return `Diamond star on ${dateKey} (${minutes.toFixed(0)} min)`;
+}
+
 export function MonthlyReadingCalendar() {
   const now = new Date();
   const today = { year: now.getFullYear(), month: now.getMonth() };
   const [view, setView] = useState(today);
-  const { readingDays } = useReadingSessionLog();
+  const { readingDays, dailyMinutes } = useReadingSessionLog();
 
   const isCurrentMonth = isSameMonth(view, today);
 
@@ -90,7 +147,12 @@ export function MonthlyReadingCalendar() {
         </div>
 
         <p className="mb-2 text-[12px] font-medium text-slate-500">
-          {daysReadThisMonth} {daysReadThisMonth === 1 ? "day" : "days"} read
+          {daysReadThisMonth}{" "}
+          {daysReadThisMonth === 1 ? "day" : "days"} read
+          <span className="text-slate-400">
+            {" "}
+            · gold any log · red 15+ · diamond 30+
+          </span>
         </p>
 
         <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
@@ -113,33 +175,21 @@ export function MonthlyReadingCalendar() {
               );
             }
 
-            const hasSession = readingDays.has(cell.dateKey);
+            const minutes = dailyMinutes.get(cell.dateKey) ?? 0;
+            const hasLoggedSession = readingDays.has(cell.dateKey);
+            const tier = starTierForDay(minutes, hasLoggedSession);
+            const isToday = Boolean(cell.isToday && isCurrentMonth);
 
             return (
               <div
                 key={cell.dateKey}
-                className={`reading-calendar-cell-height flex items-center justify-center rounded-md text-[12px] font-semibold transition-colors sm:text-xs ${
-                  cell.isToday && isCurrentMonth
-                    ? "ring-1 ring-blue-500 ring-offset-1"
-                    : ""
-                } ${
-                  hasSession
-                    ? "bg-amber-50 text-amber-700"
-                    : "bg-slate-50 text-slate-600"
-                }`}
-                title={
-                  hasSession
-                    ? `Read on ${cell.dateKey}`
-                    : `No reading logged on ${cell.dateKey}`
-                }
+                className={`reading-calendar-cell-height flex items-center justify-center rounded-md text-[12px] font-semibold transition-colors sm:text-xs ${cellClasses(tier, isToday)}`}
+                title={tierTitle(cell.dateKey, tier, minutes)}
               >
-                {hasSession ? (
-                  <Star
-                    className="h-3 w-3 fill-amber-400 text-amber-500 sm:h-3.5 sm:w-3.5"
-                    aria-label={`Read on day ${cell.day}`}
-                  />
-                ) : (
+                {tier === "none" ? (
                   <span>{cell.day}</span>
+                ) : (
+                  <CalendarDayStar tier={tier} />
                 )}
               </div>
             );

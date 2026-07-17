@@ -13,6 +13,7 @@ import {
   hydrateReadingSessionLog,
   readReadingSessionLog,
 } from "@/lib/reading-session-log";
+import { dailyMinutesFromSessions } from "@/lib/daily-reading-stars";
 import { readingDaysFromSessions } from "@/lib/reading-streak";
 import type { ReadingSessionLogEntry } from "@/lib/types";
 import { useAuth } from "@/providers/AuthProvider";
@@ -20,6 +21,8 @@ import { useAuth } from "@/providers/AuthProvider";
 interface ReadingSessionLogContextValue {
   sessions: ReadingSessionLogEntry[];
   readingDays: Set<string>;
+  /** Total minutes read per local date key (YYYY-MM-DD). */
+  dailyMinutes: Map<string, number>;
   hydrated: boolean;
   reload: () => void;
 }
@@ -88,9 +91,14 @@ export function ReadingSessionLogProvider({
     [sessions],
   );
 
+  const dailyMinutes = useMemo(
+    () => dailyMinutesFromSessions(sessions),
+    [sessions],
+  );
+
   const value = useMemo(
-    () => ({ sessions, readingDays, hydrated, reload }),
-    [sessions, readingDays, hydrated, reload],
+    () => ({ sessions, readingDays, dailyMinutes, hydrated, reload }),
+    [sessions, readingDays, dailyMinutes, hydrated, reload],
   );
 
   return (

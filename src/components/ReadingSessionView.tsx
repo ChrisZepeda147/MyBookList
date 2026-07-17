@@ -1,16 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, PenLine, Sparkles } from "lucide-react";
 import { useReadingSessionTimer } from "@/hooks/useReadingSessionTimer";
 import { resolveReadingStartPage } from "@/lib/reading-session-timer";
 import {
   clearReadingSessionUiState,
   persistActiveReadingSession,
 } from "@/lib/reading-session-ui";
+import {
+  DIAMOND_STAR_MINUTES,
+  RED_STAR_MINUTES,
+  liveMilestonesCrossed,
+  milestoneLabel,
+  type DailyStarTier,
+} from "@/lib/daily-reading-stars";
+import { toLocalDateKey } from "@/lib/reading-streak";
+import { celebrateStarMilestone } from "@/lib/celebration-confetti";
+import { useReadingSessionLog } from "@/hooks/useReadingSessionLog";
 import { ReadingSessionStopPrompt } from "@/components/ReadingSessionStopPrompt";
 import { ReadingSessionCancelPrompt } from "@/components/ReadingSessionCancelPrompt";
+import { UntimedReadingSessionPrompt } from "@/components/UntimedReadingSessionPrompt";
 
 export interface ReadingSessionCompletePayload {
   elapsedMs: number;
@@ -33,6 +44,8 @@ interface ReadingSessionViewProps {
 const READING_SESSION_PANEL_CLASS =
   "modal-panel modal-panel--reading-session relative z-10 flex w-full flex-col overflow-hidden rounded-2xl bg-[#0a0a0a] shadow-2xl ring-1 ring-white/10 transition-all duration-200";
 
+const MILESTONE_BADGE_MS = 3200;
+
 /** Compact modal reading timer — warm book photo, serif typography. */
 export function ReadingSessionView({
   bookId,
@@ -48,8 +61,17 @@ export function ReadingSessionView({
   const [mounted, setMounted] = useState(false);
   const [showStopPrompt, setShowStopPrompt] = useState(false);
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+  const [showUntimedSession, setShowUntimedSession] = useState(false);
   const [pendingElapsedMs, setPendingElapsedMs] = useState(0);
   const [pendingStartPage, setPendingStartPage] = useState(1);
+  const [milestoneBadge, setMilestoneBadge] = useState<string | null>(null);
+  const [panelFlash, setPanelFlash] = useState(false);
+  const celebratedRef = useRef<Set<Exclude<DailyStarTier, "none">>>(new Set());
+  const previousTotalRef = useRef(0);
+
+  const { dailyMinutes } = useReadingSessionLog();
+  const todayKey = toLocalDateKey(new Date());
+  const savedMinutesToday = dailyMinutes.get(todayKey) ?? 0;
 
   const defaultStartPage = resolveReadingStartPage(currentPage);
 
@@ -59,6 +81,7 @@ export function ReadingSessionView({
     isRunning,
     isPaused,
     formattedTime,
+    displayMs,
     sessionStartPage,
     getElapsedMs,
     handleStart,
@@ -69,6 +92,61 @@ export function ReadingSessionView({
     handlePauseAndPersist,
     handleCancelSession,
   } = useReadingSessionTimer(bookId, defaultStartPage);
+
+  const liveTotalMinutes = useMemo(
+    () => savedMinutesToday + displayMs / 60_000,
+    [displayMs, savedMinutesToday],
+  );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    celebratedRef.current = new Set();
+    previousTotalRef.current = savedMinutesToday;
+    if (savedMinutesToday > 0) {
+      celebratedRef.current.add("gold");
+    }
+    if (savedMinutesToday >= RED_STAR_MINUTES) {
+      celebratedRef.current.add("red");
+    }
+    if (savedMinutesToday >= DIAMOND_STAR_MINUTES) {
+      celebratedRef.current.add("diamond");
+    }
+  }, [bookId, savedMinutesToday]);
+
+  useEffect(() => {
+    if (isIdle) return;
+
+    const previous = previousTotalRef.current;
+    const next = liveTotalMinutes;
+    previousTotalRef.current = next;
+
+    const crossed = liveMilestonesCrossed(previous, next).filter(
+      (tier) => !celebratedRef.current.has(tier),
+    );
+    if (crossed.length === 0) return;
+
+    for (const tier of crossed) {
+      celebratedRef.current.add(tier);
+      void celebrateStarMilestone(tier);
+      setMilestoneBadge(milestoneLabel(tier));
+      setPanelFlash(true);
+    }
+  }, [isIdle, liveTotalMinutes]);
+
+  useEffect(() => {
+    if (!milestoneBadge) return;
+    const id = window.setTimeout(() => setMilestoneBadge(null), MILESTONE_BADGE_MS);
+    return () => window.clearTimeout(id);
+  }, [milestoneBadge]);
+
+  useEffect(() => {
+    if (!panelFlash) return;
+    const id = window.setTimeout(() => setPanelFlash(false), 700);
+    return () => window.clearTimeout(id);
+  }, [panelFlash]);
 
   const sessionSnapshot = {
     id: bookId,
@@ -83,10 +161,6 @@ export function ReadingSessionView({
   }, [bookAuthor, bookId, bookTitle, currentPage, pageCount]);
 
   const hasActiveTimer = isRunning || isPaused;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -128,7 +202,14 @@ export function ReadingSessionView({
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key !== "Escape" || showStopPrompt || showCancelPrompt) return;
+      if (
+        e.key !== "Escape" ||
+        showStopPrompt ||
+        showCancelPrompt ||
+        showUntimedSession
+      ) {
+        return;
+      }
       if (isRunning) {
         handlePauseAndPersist();
         persistSessionActive();
@@ -152,10 +233,11 @@ export function ReadingSessionView({
     persistSessionActive,
     showStopPrompt,
     showCancelPrompt,
+    showUntimedSession,
   ]);
 
   function handleBack() {
-    if (showStopPrompt || showCancelPrompt) return;
+    if (showStopPrompt || showCancelPrompt || showUntimedSession) return;
     if (isRunning) {
       handlePauseAndPersist();
       persistSessionActive();
@@ -210,6 +292,18 @@ export function ReadingSessionView({
     onBack();
   }
 
+  function handleUntimedSessionConfirm(endPage: number) {
+    const startPage = resolveReadingStartPage(currentPage);
+    setShowUntimedSession(false);
+    clearReadingSessionUiState();
+    onSessionComplete?.({
+      elapsedMs: 0,
+      startPage,
+      endPage,
+    });
+    onBack();
+  }
+
   if (!mounted || !hydrated) return null;
 
   return (
@@ -235,7 +329,7 @@ export function ReadingSessionView({
           <div
             className={`${READING_SESSION_PANEL_CLASS} ${
               isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"
-            }`}
+            } ${panelFlash ? "reading-session-milestone-flash" : ""}`}
           >
             {/* Open book — warm top-lit atmosphere matching reference */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -254,6 +348,15 @@ export function ReadingSessionView({
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center_36%,rgba(255,215,160,0.14)_0%,transparent_52%)]"
               aria-hidden
             />
+
+            {milestoneBadge && (
+              <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
+                <div className="reading-session-milestone-badge inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-black/40 ring-1 ring-white/60">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  {milestoneBadge}
+                </div>
+              </div>
+            )}
 
             <header className="relative z-10 flex shrink-0 items-center px-4 pb-1 pt-4">
               <button
@@ -297,13 +400,23 @@ export function ReadingSessionView({
               </button>
 
               {isIdle ? (
-                <button
-                  type="button"
-                  onClick={handleStartSession}
-                  className="mt-10 text-sm font-semibold uppercase tracking-[0.35em] text-white transition-opacity hover:text-white/85"
-                >
-                  START
-                </button>
+                <div className="mt-10 flex flex-col items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleStartSession}
+                    className="text-sm font-semibold uppercase tracking-[0.35em] text-white transition-opacity hover:text-white/85"
+                  >
+                    START
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowUntimedSession(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/15 px-3.5 py-1.5 text-sm font-semibold text-emerald-100 transition-colors hover:bg-emerald-500/25"
+                  >
+                    <PenLine className="h-4 w-4" />
+                    Log Pages
+                  </button>
+                </div>
               ) : (
                 <p className="mt-10 text-sm font-semibold uppercase tracking-[0.35em] text-white/45">
                   {isRunning ? "Reading…" : "Paused"}
@@ -361,6 +474,15 @@ export function ReadingSessionView({
           bookTitle={bookTitle}
           onConfirm={handleConfirmCancelSession}
           onDismiss={handleDismissCancelPrompt}
+        />
+      )}
+      {showUntimedSession && (
+        <UntimedReadingSessionPrompt
+          bookTitle={bookTitle}
+          startPage={resolveReadingStartPage(currentPage)}
+          maxPage={pageCount}
+          onConfirm={handleUntimedSessionConfirm}
+          onCancel={() => setShowUntimedSession(false)}
         />
       )}
     </>

@@ -42,7 +42,7 @@ export function sessionToDateKey(session: ReadingSessionLogEntry): string {
   return toLocalDateKey(new Date(raw));
 }
 
-/** Unique local dates that have at least one logged session. */
+/** Unique local dates that have at least one logged session (streak-qualifying). */
 export function readingDaysFromSessions(
   sessions: ReadingSessionLogEntry[],
 ): Set<string> {
