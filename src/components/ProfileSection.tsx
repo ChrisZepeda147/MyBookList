@@ -2,7 +2,17 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Pencil, Save, Sparkles, Target, Trophy, LogOut } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Flame,
+  Pencil,
+  Save,
+  Sparkles,
+  Target,
+  Trophy,
+  LogOut,
+} from "lucide-react";
 import { MyBookListLogo } from "@/components/MyBookListLogo";
 import { getActiveAnnualBookRank } from "@/lib/annual-book-ranks";
 import {
@@ -21,6 +31,114 @@ import { uploadProfileAvatar } from "@/lib/storage/profile-avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useReadingSessionLog } from "@/providers/ReadingSessionLogProvider";
+
+function clampGoal(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function GoalNumberField({
+  id,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  function commit(raw: string) {
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n)) {
+      setText(String(value));
+      return;
+    }
+    const next = clampGoal(n, min, max);
+    onChange(next);
+    setText(String(next));
+  }
+
+  function step(delta: number) {
+    const next = clampGoal(value + delta, min, max);
+    onChange(next);
+    setText(String(next));
+  }
+
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1 block text-xs font-medium text-slate-600"
+      >
+        {label}
+      </label>
+      <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={text}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^\d]/g, "");
+            setText(raw);
+            if (raw === "") return;
+            const n = parseInt(raw, 10);
+            if (Number.isFinite(n) && n >= min && n <= max) {
+              onChange(n);
+            }
+          }}
+          onBlur={() => commit(text)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              step(1);
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              step(-1);
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              commit(text);
+            }
+          }}
+          className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none"
+          aria-label={label}
+        />
+        <div className="flex flex-col border-l border-slate-200">
+          <button
+            type="button"
+            onClick={() => step(1)}
+            disabled={value >= max}
+            className="flex h-1/2 items-center justify-center px-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={`Increase ${label}`}
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            disabled={value <= min}
+            className="flex h-1/2 items-center justify-center border-t border-slate-200 px-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={`Decrease ${label}`}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProfileSection() {
   const { user } = useAuth();
@@ -76,7 +194,11 @@ export function ProfileSection() {
 
     setSaving(true);
     try {
-      await updateProfile(draft);
+      await updateProfile({
+        ...draft,
+        readingGoal: clampGoal(draft.readingGoal, 1, 365),
+        monthlyReadingGoal: clampGoal(draft.monthlyReadingGoal, 1, 100),
+      });
       setEditing(false);
       if (avatarPreviewUrl) {
         URL.revokeObjectURL(avatarPreviewUrl);
@@ -87,11 +209,6 @@ export function ProfileSection() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function parseGoal(value: string, fallback: number): number {
-    const n = parseInt(value, 10);
-    return Number.isFinite(n) && n > 0 ? n : fallback;
   }
 
   async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -235,45 +352,26 @@ export function ProfileSection() {
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">
-                    Books to read in {currentYear}
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={draft.readingGoal}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        readingGoal: parseGoal(e.target.value, draft.readingGoal),
-                      })
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">
-                    Books to read in {monthName}
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={draft.monthlyReadingGoal}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        monthlyReadingGoal: parseGoal(
-                          e.target.value,
-                          draft.monthlyReadingGoal,
-                        ),
-                      })
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
+                <GoalNumberField
+                  id="yearly-reading-goal"
+                  label={`Books to read in ${currentYear}`}
+                  value={draft.readingGoal}
+                  min={1}
+                  max={365}
+                  onChange={(readingGoal) =>
+                    setDraft((prev) => ({ ...prev, readingGoal }))
+                  }
+                />
+                <GoalNumberField
+                  id="monthly-reading-goal"
+                  label={`Books to read in ${monthName}`}
+                  value={draft.monthlyReadingGoal}
+                  min={1}
+                  max={100}
+                  onChange={(monthlyReadingGoal) =>
+                    setDraft((prev) => ({ ...prev, monthlyReadingGoal }))
+                  }
+                />
               </div>
             </div>
           </div>

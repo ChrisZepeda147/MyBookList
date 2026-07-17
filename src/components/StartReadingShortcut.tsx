@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Timer } from "lucide-react";
+import { Lock, Timer } from "lucide-react";
 import { useStartReadingSession } from "@/providers/StartReadingSessionProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
 
@@ -13,6 +13,7 @@ export function StartReadingShortcut() {
     [books],
   );
   const [selectedId, setSelectedId] = useState<string>("");
+  const hasActiveReading = readingBooks.length > 0;
 
   useEffect(() => {
     if (readingBooks.length === 0) {
@@ -28,12 +29,35 @@ export function StartReadingShortcut() {
   }, [readingBooks]);
 
   const handleStartMultiple = useCallback(() => {
+    if (!hasActiveReading) return;
     const book = readingBooks.find((b) => b.id === selectedId);
     if (book) openSession(book);
-  }, [openSession, readingBooks, selectedId]);
+  }, [hasActiveReading, openSession, readingBooks, selectedId]);
 
-  if (!loaded || readingBooks.length === 0) {
+  if (!loaded) {
     return null;
+  }
+
+  if (!hasActiveReading) {
+    return (
+      <div
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-100 to-slate-50 px-4 py-3 text-left opacity-90"
+        aria-disabled="true"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-600">
+            Reading session locked
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Change book status to &ldquo;reading&rdquo; to start a reading session.
+          </p>
+        </div>
+        <span className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 rounded-lg bg-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-500 shadow-none">
+          <Lock className="h-4 w-4" />
+          Start Reading
+        </span>
+      </div>
+    );
   }
 
   if (readingBooks.length === 1) {
