@@ -1,6 +1,6 @@
 # MyBookList
 
-A clean, responsive book-tracking web app (MyAnimeList-style, but for books). Built with Next.js, Tailwind CSS, and **Supabase** for authentication and cloud storage.
+A clean, responsive book-tracking web app. Built with Next.js, Tailwind CSS, and **Supabase** for authentication and cloud storage.
 
 ## Features
 
