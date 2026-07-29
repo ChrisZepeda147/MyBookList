@@ -32,6 +32,13 @@ export function AuthForm() {
   const isSwapProfiles = searchParams.get("swap") === "1";
 
   useEffect(() => {
+    const requestedMode = searchParams.get("mode");
+    if (requestedMode === "signup" || requestedMode === "login") {
+      setMode(requestedMode);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     const callbackError = searchParams.get("error");
     if (callbackError && CALLBACK_ERRORS[callbackError]) {
       setError(CALLBACK_ERRORS[callbackError]);
@@ -126,6 +133,18 @@ export function AuthForm() {
               ? "Welcome back — pick up where you left off."
               : "Start tracking your reading journey today."}
         </p>
+        {!isSwapProfiles && (
+          <p className="mt-3 text-sm text-slate-500">
+            New here?{" "}
+            <a
+              href="/"
+              className="font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Preview the app
+            </a>{" "}
+            before you sign up.
+          </p>
+        )}
       </div>
 
       <div className="mb-6 flex rounded-xl bg-blue-50 p-1">

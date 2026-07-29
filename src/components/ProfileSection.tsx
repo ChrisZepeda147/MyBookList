@@ -30,6 +30,7 @@ import { resolveAvatarDisplaySrc } from "@/lib/storage/avatar-url";
 import { uploadProfileAvatar } from "@/lib/storage/profile-avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 import { useReadingSessionLog } from "@/providers/ReadingSessionLogProvider";
 
 function clampGoal(value: number, min: number, max: number): number {
@@ -142,6 +143,7 @@ function GoalNumberField({
 
 export function ProfileSection() {
   const { user } = useAuth();
+  const { isPreviewMode, requireAccount } = useDemoPreview();
   const { profile, updateProfile, books } = useBookStore();
   const { sessions } = useReadingSessionLog();
   const { streak } = useReadingStreak();
@@ -184,12 +186,20 @@ export function ProfileSection() {
   }, [avatarPreviewUrl]);
 
   function startEdit() {
+    if (isPreviewMode) {
+      requireAccount("signup");
+      return;
+    }
     setDraft(profile);
     setAvatarError(null);
     setEditing(true);
   }
 
   async function save() {
+    if (isPreviewMode) {
+      requireAccount("signup");
+      return;
+    }
     if (avatarUploading || saving) return;
 
     setSaving(true);
@@ -444,17 +454,27 @@ export function ProfileSection() {
       )}
 
       <div className="mt-8 border-t border-slate-100 pt-6">
-        <button
-          type="button"
-          onClick={() => setSignOutOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
+        {isPreviewMode ? (
+          <button
+            type="button"
+            onClick={() => requireAccount("signup")}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-amber-700/20 transition-colors hover:bg-amber-700"
+          >
+            Sign up for your own list
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSignOutOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
+        )}
       </div>
 
-      {signOutOpen && (
+      {signOutOpen && !isPreviewMode && (
         <SignOutConfirmModal onClose={() => setSignOutOpen(false)} />
       )}
     </section>

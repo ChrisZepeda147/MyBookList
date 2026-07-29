@@ -33,6 +33,8 @@ import {
   saveProfile,
 } from "@/lib/storage/supabase-db";
 import { useAuth } from "@/providers/AuthProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
+import { loadDemoPreviewLibrary } from "@/lib/demo-preview";
 
 interface BookStoreContextValue {
   profile: UserProfile;
@@ -53,6 +55,7 @@ const BookStoreContext = createContext<BookStoreContextValue | null>(null);
 
 export function BookStoreProvider({ children }: { children: React.ReactNode }) {
   const { user, authReady } = useAuth();
+  const { requireAccount } = useDemoPreview();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [books, setBooks] = useState<BookEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -102,13 +105,6 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!user) {
-      setProfile(DEFAULT_PROFILE);
-      setBooks([]);
-      setLoaded(true);
-      return;
-    }
-
     let cancelled = false;
     setLoaded(false);
     setBooks([]);
@@ -122,6 +118,15 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        if (!user) {
+          // Same load path as a signed-in account — Chris's library, read-only.
+          const demo = await loadDemoPreviewLibrary();
+          if (cancelled) return;
+          setProfile(demo.profile);
+          setBooks(demo.books);
+          return;
+        }
+
         const [nextProfile, nextBooks] = await Promise.all([
           fetchProfile(supabase, user.id),
           fetchBooks(supabase, user.id),
@@ -147,6 +152,11 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = useCallback(
     async (updates: Partial<UserProfile>): Promise<void> => {
+      // Preview is read-only — never mutate demo profile (including silent streak sync).
+      if (!userIdRef.current) {
+        return;
+      }
+
       const previous = profile;
       const next = { ...profile, ...updates };
       setProfile(next);
@@ -169,6 +179,11 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
 
   const addBook = useCallback(
     (book: Omit<BookEntry, "id" | "addedAt">) => {
+      if (!userIdRef.current) {
+        requireAccount("signup");
+        return;
+      }
+
       const tempId = `pending-${crypto.randomUUID()}`;
       const optimistic: BookEntry = {
         ...book,
@@ -225,11 +240,16 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     },
-    [applyBookMetadataUpdate],
+    [applyBookMetadataUpdate, requireAccount],
   );
 
   const updateBook = useCallback(
     (id: string, updates: Partial<BookEntry>) => {
+      if (!userIdRef.current) {
+        requireAccount("signup");
+        return;
+      }
+
       const snapshot = booksRef.current.find((b) => b.id === id);
       if (!snapshot) return;
 
@@ -238,11 +258,16 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
       );
       void applyBookPatch(id, updates, snapshot);
     },
-    [applyBookPatch],
+    [applyBookPatch, requireAccount],
   );
 
   const removeBook = useCallback(
     (id: string) => {
+      if (!userIdRef.current) {
+        requireAccount("signup");
+        return;
+      }
+
       const snapshot = booksRef.current.find((b) => b.id === id);
       if (!snapshot) return;
 
@@ -259,7 +284,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     },
-    [],
+    [requireAccount],
   );
 
   const setBookStatus = useCallback(

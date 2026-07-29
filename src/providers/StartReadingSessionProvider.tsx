@@ -26,6 +26,7 @@ import {
 } from "@/lib/reading-session-ui";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 
 interface StartReadingSessionContextValue {
   openSession: (book: BookEntry) => void;
@@ -53,6 +54,7 @@ export function StartReadingSessionProvider({
 }) {
   const { books, loaded, setCurrentPage } = useBookStore();
   const { user } = useAuth();
+  const { isPreviewMode, requireAccount } = useDemoPreview();
   const [sessionBookId, setSessionBookId] = useState<string | null>(
     readInitialSessionBookId,
   );
@@ -75,8 +77,13 @@ export function StartReadingSessionProvider({
   }, []);
 
   useEffect(() => {
+    if (isPreviewMode || !user) {
+      setSessionBookId(null);
+      setRestoredSnapshot(null);
+      return;
+    }
     restoreActiveSession();
-  }, [restoreActiveSession]);
+  }, [isPreviewMode, restoreActiveSession, user]);
 
   useEffect(() => {
     if (!uiHydrated) return;
@@ -140,6 +147,10 @@ export function StartReadingSessionProvider({
   }, [books, sessionBookId, uiHydrated, loaded]);
 
   const openSession = useCallback((book: BookEntry) => {
+    if (isPreviewMode || !user) {
+      requireAccount("signup");
+      return;
+    }
     setSessionBookId(book.id);
     setRestoredSnapshot({
       id: book.id,
@@ -148,7 +159,7 @@ export function StartReadingSessionProvider({
       currentPage: book.currentPage,
       pageCount: book.pageCount,
     });
-  }, []);
+  }, [isPreviewMode, requireAccount, user]);
 
   const closeSession = useCallback(() => {
     setSessionBookId(null);

@@ -75,6 +75,7 @@ export async function saveProfile(
 export async function fetchBooks(
   supabase: SupabaseClient,
   userId: string,
+  options?: { readOnly?: boolean },
 ): Promise<BookEntry[]> {
   const { data, error } = await supabase
     .from("user_books")
@@ -85,17 +86,21 @@ export async function fetchBooks(
   if (error) throw error;
   const rows = (data ?? []) as BookRow[];
 
-  const stale = rows.filter((row) => isPlaceholderDescription(row.description));
-  if (stale.length > 0) {
-    await Promise.all(
-      stale.map((row) =>
-        supabase
-          .from("user_books")
-          .update({ description: null })
-          .eq("user_id", userId)
-          .eq("id", row.id),
-      ),
+  if (!options?.readOnly) {
+    const stale = rows.filter((row) =>
+      isPlaceholderDescription(row.description),
     );
+    if (stale.length > 0) {
+      await Promise.all(
+        stale.map((row) =>
+          supabase
+            .from("user_books")
+            .update({ description: null })
+            .eq("user_id", userId)
+            .eq("id", row.id),
+        ),
+      );
+    }
   }
 
   return rows.map(bookRowToEntry);

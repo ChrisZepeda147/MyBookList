@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, Timer } from "lucide-react";
 import { useStartReadingSession } from "@/providers/StartReadingSessionProvider";
 import { useBookStore } from "@/providers/BookStoreProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 
 export function StartReadingShortcut() {
   const { books, loaded } = useBookStore();
   const { openSession } = useStartReadingSession();
+  const { isPreviewMode, requireAccount } = useDemoPreview();
   const readingBooks = useMemo(
     () => books.filter((book) => book.status === "reading"),
     [books],
@@ -29,13 +31,47 @@ export function StartReadingShortcut() {
   }, [readingBooks]);
 
   const handleStartMultiple = useCallback(() => {
+    if (isPreviewMode) {
+      requireAccount("signup");
+      return;
+    }
     if (!hasActiveReading) return;
     const book = readingBooks.find((b) => b.id === selectedId);
     if (book) openSession(book);
-  }, [hasActiveReading, openSession, readingBooks, selectedId]);
+  }, [
+    hasActiveReading,
+    isPreviewMode,
+    openSession,
+    readingBooks,
+    requireAccount,
+    selectedId,
+  ]);
 
   if (!loaded) {
     return null;
+  }
+
+  if (isPreviewMode) {
+    return (
+      <button
+        type="button"
+        onClick={() => requireAccount("signup")}
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-4 py-3 text-left transition-colors hover:border-amber-300 hover:from-amber-100"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-amber-950">
+            Preview only — reading tools locked
+          </p>
+          <p className="mt-0.5 text-xs text-amber-900/75">
+            Sign up to start timed sessions and log pages on your own list.
+          </p>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-amber-700/20">
+          <Lock className="h-4 w-4" />
+          Sign up
+        </span>
+      </button>
+    );
   }
 
   if (!hasActiveReading) {

@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function hasSupabaseAuthCookie(request: NextRequest): boolean {
+  return request.cookies
+    .getAll()
+    .some(
+      (cookie) =>
+        cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"),
+    );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -8,6 +17,28 @@ export async function updateSession(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
+    return supabaseResponse;
+  }
+
+  const pathname = request.nextUrl.pathname;
+  const authCode = request.nextUrl.searchParams.get("code");
+
+  if (authCode && pathname !== "/auth/callback") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/auth/callback";
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // API routes authenticate themselves; skip the session round-trip here.
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
+  const isAuthRoute = pathname === "/login";
+  const needsAuthCheck = isAuthRoute || hasSupabaseAuthCookie(request);
+
+  // Guests with no session cookies: skip auth entirely (demo preview path).
+  if (!needsAuthCheck) {
     return supabaseResponse;
   }
 
@@ -28,35 +59,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // getSession reads local cookies — much faster than remote getUser.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const pathname = request.nextUrl.pathname;
-  const authCode = request.nextUrl.searchParams.get("code");
-
-  if (authCode && pathname !== "/auth/callback") {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/auth/callback";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  const isAuthRoute = pathname === "/login";
-  const isPublic =
-    isAuthRoute ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname === "/favicon.ico";
-
-  if (!user && !isPublic) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  if (user && isAuthRoute) {
+  if (session?.user && isAuthRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
     redirectUrl.search = "";

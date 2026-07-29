@@ -101,6 +101,9 @@ export function calculateReadingStreak(
 export interface StreakShieldConfig {
   streakShields: number;
   lastShieldMilestone: number;
+  /** All calendar days bridged by shields (YYYY-MM-DD). */
+  shieldedDates: string[];
+  /** Legacy single date — kept in sync with the newest shieldedDates entry. */
   lastShieldedDate: string | null;
   shieldActivatedOn: string | null;
   shieldOfferDismissedFor: string | null;
@@ -120,27 +123,55 @@ export interface StreakEvaluation {
   profileUpdates: Partial<StreakShieldConfig & { streakShields: number }> | null;
 }
 
+/** Normalize legacy lastShieldedDate into the full shieldedDates list. */
+export function normalizeShieldedDates(config: {
+  shieldedDates?: string[] | null;
+  lastShieldedDate?: string | null;
+}): string[] {
+  const fromArray = (config.shieldedDates ?? []).filter(
+    (d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d),
+  );
+  const dates = new Set(fromArray);
+  if (
+    config.lastShieldedDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(config.lastShieldedDate)
+  ) {
+    dates.add(config.lastShieldedDate);
+  }
+  return [...dates].sort();
+}
+
+function latestShieldedDate(dates: string[]): string | null {
+  if (dates.length === 0) return null;
+  return dates.reduce((latest, d) => (d > latest ? d : latest));
+}
+
 function buildEffectiveReadingDays(
   sessions: ReadingSessionLogEntry[],
-  lastShieldedDate: string | null,
+  shieldedDates: string[],
 ): Set<string> {
   const days = readingDaysFromSessions(sessions);
-  if (lastShieldedDate) days.add(lastShieldedDate);
+  for (const date of shieldedDates) {
+    days.add(date);
+  }
   return days;
 }
 
 function canBridgeMissedDay(
   realDays: Set<string>,
+  effectiveDays: Set<string>,
   now: Date,
-  lastShieldedDate: string | null,
 ): boolean {
   const today = toLocalDateKey(now);
   const yesterday = shiftDateKey(today, -1);
   const dayBeforeYesterday = shiftDateKey(today, -2);
 
+  // Already covered by a real session today/yesterday — no miss to bridge.
   if (realDays.has(today) || realDays.has(yesterday)) return false;
-  if (!realDays.has(dayBeforeYesterday)) return false;
-  if (lastShieldedDate === yesterday) return false;
+  // Yesterday already bridged by a prior shield.
+  if (effectiveDays.has(yesterday)) return false;
+  // Need an unbroken chain through the day before yesterday (read or shielded).
+  if (!effectiveDays.has(dayBeforeYesterday)) return false;
 
   return true;
 }
@@ -159,16 +190,17 @@ export function getShieldOffer(
 
   if (config.streakShields <= 0) return empty;
 
+  const shieldedDates = normalizeShieldedDates(config);
   const realDays = readingDaysFromSessions(sessions);
-  const effectiveDays = buildEffectiveReadingDays(sessions, config.lastShieldedDate);
+  const effectiveDays = buildEffectiveReadingDays(sessions, shieldedDates);
   const streak = calculateStreakFromDays(effectiveDays, now);
   if (streak > 0) return empty;
-  if (!canBridgeMissedDay(realDays, now, config.lastShieldedDate)) return empty;
+  if (!canBridgeMissedDay(realDays, effectiveDays, now)) return empty;
 
   const yesterday = shiftDateKey(toLocalDateKey(now), -1);
   if (config.shieldOfferDismissedFor === yesterday) return empty;
 
-  const bridgedDays = new Set(realDays);
+  const bridgedDays = new Set(effectiveDays);
   bridgedDays.add(yesterday);
   const preservedStreak = calculateStreakFromDays(bridgedDays, now);
   if (preservedStreak <= 0) return empty;
@@ -185,9 +217,15 @@ export function buildShieldConsumptionUpdates(
   missedDate: string,
   now = new Date(),
 ): Partial<StreakShieldConfig & { streakShields: number }> {
+  const shieldedDates = normalizeShieldedDates({
+    ...config,
+    shieldedDates: [...normalizeShieldedDates(config), missedDate],
+  });
+
   return {
     streakShields: Math.max(0, config.streakShields - 1),
-    lastShieldedDate: missedDate,
+    shieldedDates,
+    lastShieldedDate: latestShieldedDate(shieldedDates),
     shieldActivatedOn: toLocalDateKey(now),
     shieldOfferDismissedFor: null,
   };
@@ -199,6 +237,7 @@ export function buildShieldDeclineUpdates(
   return {
     shieldOfferDismissedFor: missedDate,
     lastShieldMilestone: 0,
+    shieldedDates: [],
     lastShieldedDate: null,
   };
 }
@@ -226,15 +265,30 @@ export function evaluateReadingStreak(
   let {
     streakShields,
     lastShieldMilestone,
-    lastShieldedDate,
     shieldActivatedOn,
   } = config;
 
+  let shieldedDates = normalizeShieldedDates(config);
+  let lastShieldedDate = latestShieldedDate(shieldedDates);
+
+  // Keep legacy lastShieldedDate / array in sync if either side was missing.
+  if (
+    JSON.stringify(shieldedDates) !== JSON.stringify(config.shieldedDates ?? []) ||
+    lastShieldedDate !== (config.lastShieldedDate ?? null)
+  ) {
+    profileUpdates.shieldedDates = shieldedDates;
+    profileUpdates.lastShieldedDate = lastShieldedDate;
+  }
+
   const today = toLocalDateKey(now);
   let shieldsEarned = 0;
-  const shieldOffer = getShieldOffer(sessions, config, now);
+  const shieldOffer = getShieldOffer(
+    sessions,
+    { ...config, shieldedDates, lastShieldedDate },
+    now,
+  );
 
-  const effectiveDays = buildEffectiveReadingDays(sessions, lastShieldedDate);
+  const effectiveDays = buildEffectiveReadingDays(sessions, shieldedDates);
   const streak = calculateStreakFromDays(effectiveDays, now);
 
   if (streak === 0) {
@@ -243,8 +297,10 @@ export function evaluateReadingStreak(
         profileUpdates.lastShieldMilestone = 0;
         lastShieldMilestone = 0;
       }
-      if (lastShieldedDate !== null) {
+      if (shieldedDates.length > 0 || lastShieldedDate !== null) {
+        profileUpdates.shieldedDates = [];
         profileUpdates.lastShieldedDate = null;
+        shieldedDates = [];
         lastShieldedDate = null;
       }
     }
@@ -650,6 +706,15 @@ export function getStreakRewardTextClassName(
 ): string | null {
   if (streak <= 0) return null;
   const { id } = getStreakStyle(streak, preferredStyleId);
+  // Aurora rainbow name treatment applies from Aurora (10+) through every higher tier.
+  if (
+    id === "aurora" ||
+    id === "cosmic" ||
+    id === "solar" ||
+    id === "nebula"
+  ) {
+    return "streak-reward-text streak-reward-text--aurora";
+  }
   return `streak-reward-text streak-reward-text--${id}`;
 }
 

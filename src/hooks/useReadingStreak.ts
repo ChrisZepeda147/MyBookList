@@ -9,10 +9,12 @@ import {
 import { useReadingSessionLog } from "@/hooks/useReadingSessionLog";
 import { useServerNow } from "@/hooks/useServerNow";
 import { useBookStore } from "@/providers/BookStoreProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 
 export function useReadingStreak() {
   const { sessions, hydrated: streakLogReady } = useReadingSessionLog();
   const { profile, updateProfile, loaded } = useBookStore();
+  const { isPreviewMode } = useDemoPreview();
   const serverNow = useServerNow();
   const syncingRef = useRef(false);
 
@@ -23,6 +25,7 @@ export function useReadingStreak() {
         {
           streakShields: profile.streakShields,
           lastShieldMilestone: profile.lastShieldMilestone,
+          shieldedDates: profile.shieldedDates ?? [],
           lastShieldedDate: profile.lastShieldedDate,
           shieldActivatedOn: profile.shieldActivatedOn,
           shieldOfferDismissedFor: profile.shieldOfferDismissedFor,
@@ -33,6 +36,7 @@ export function useReadingStreak() {
       sessions,
       profile.streakShields,
       profile.lastShieldMilestone,
+      profile.shieldedDates,
       profile.lastShieldedDate,
       profile.shieldActivatedOn,
       profile.shieldOfferDismissedFor,
@@ -41,12 +45,19 @@ export function useReadingStreak() {
   );
 
   useEffect(() => {
+    if (isPreviewMode) return;
     if (!loaded || !evaluation.profileUpdates || syncingRef.current) return;
 
     const updates = evaluation.profileUpdates;
     const changed = (
       Object.entries(updates) as [keyof typeof updates, unknown][]
-    ).some(([key, value]) => profile[key] !== value);
+    ).some(([key, value]) => {
+      const current = profile[key as keyof typeof profile];
+      if (Array.isArray(current) || Array.isArray(value)) {
+        return JSON.stringify(current ?? []) !== JSON.stringify(value ?? []);
+      }
+      return current !== value;
+    });
 
     if (!changed) return;
 
@@ -54,27 +65,36 @@ export function useReadingStreak() {
     void updateProfile(updates).finally(() => {
       syncingRef.current = false;
     });
-  }, [evaluation.profileUpdates, loaded, profile, updateProfile]);
+  }, [evaluation.profileUpdates, isPreviewMode, loaded, profile, updateProfile]);
 
   const useShield = useCallback(() => {
+    if (isPreviewMode) return;
     const offer = evaluation.shieldOffer;
     if (!offer.available || !offer.missedDate) return;
 
     void updateProfile(
       buildShieldConsumptionUpdates(
-        profile,
+        {
+          streakShields: profile.streakShields,
+          lastShieldMilestone: profile.lastShieldMilestone,
+          shieldedDates: profile.shieldedDates ?? [],
+          lastShieldedDate: profile.lastShieldedDate,
+          shieldActivatedOn: profile.shieldActivatedOn,
+          shieldOfferDismissedFor: profile.shieldOfferDismissedFor,
+        },
         offer.missedDate,
         serverNow,
       ),
     );
-  }, [evaluation.shieldOffer, profile, updateProfile, serverNow]);
+  }, [evaluation.shieldOffer, isPreviewMode, profile, updateProfile, serverNow]);
 
   const declineShieldOffer = useCallback(() => {
+    if (isPreviewMode) return;
     const offer = evaluation.shieldOffer;
     if (!offer.available || !offer.missedDate) return;
 
     void updateProfile(buildShieldDeclineUpdates(offer.missedDate));
-  }, [evaluation.shieldOffer, updateProfile]);
+  }, [evaluation.shieldOffer, isPreviewMode, updateProfile]);
 
   return {
     streak: evaluation.streak,

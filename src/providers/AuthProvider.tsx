@@ -50,16 +50,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) {
-        setUser(data.user);
-        setAuthReady(true);
-      }
+    // Local session is instant; don't block the UI on a remote getUser round-trip.
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setUser(data.session?.user ?? null);
+      setAuthReady(true);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
       setUser(session?.user ?? null);
       setAuthReady(true);
     });

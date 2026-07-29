@@ -46,8 +46,18 @@ export function loadFromLocalStorage(): AppData {
     if (!raw) return defaultData();
     const parsed = JSON.parse(raw) as AppData;
     const books = (parsed.books ?? []).map(migrateBook);
+    const mergedProfile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      ...parsed.profile,
+    };
+    if (
+      (!mergedProfile.shieldedDates || mergedProfile.shieldedDates.length === 0) &&
+      mergedProfile.lastShieldedDate
+    ) {
+      mergedProfile.shieldedDates = [mergedProfile.lastShieldedDate];
+    }
     const data: AppData = {
-      profile: { ...DEFAULT_PROFILE, ...parsed.profile },
+      profile: mergedProfile,
       books,
     };
     saveToLocalStorage(data);

@@ -37,7 +37,9 @@ export interface UserProfile {
   streakShields: number;
   /** Highest 5-day milestone already rewarded (5, 10, 15…). */
   lastShieldMilestone: number;
-  /** Calendar day (YYYY-MM-DD) bridged by a consumed shield. */
+  /** Calendar days (YYYY-MM-DD) bridged by consumed shields. */
+  shieldedDates: string[];
+  /** Most recent day bridged by a shield (legacy mirror of shieldedDates). */
   lastShieldedDate: string | null;
   /** Calendar day when a shield was last activated (for UI). */
   shieldActivatedOn: string | null;
@@ -115,6 +117,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   monthlyReadingGoal: 2,
   streakShields: 0,
   lastShieldMilestone: 0,
+  shieldedDates: [],
   lastShieldedDate: null,
   shieldActivatedOn: null,
   shieldOfferDismissedFor: null,

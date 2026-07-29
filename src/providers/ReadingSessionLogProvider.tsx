@@ -13,6 +13,7 @@ import {
   hydrateReadingSessionLog,
   readReadingSessionLog,
 } from "@/lib/reading-session-log";
+import { loadDemoPreviewLibrary } from "@/lib/demo-preview";
 import { dailyMinutesFromSessions } from "@/lib/daily-reading-stars";
 import { readingDaysFromSessions } from "@/lib/reading-streak";
 import type { ReadingSessionLogEntry } from "@/lib/types";
@@ -35,25 +36,45 @@ export function ReadingSessionLogProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
   const [sessions, setSessions] = useState<ReadingSessionLogEntry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const hydratedUserRef = useRef<string | null>(null);
 
   const reload = useCallback(() => {
-    if (!user?.id) {
-      setSessions([]);
-      return;
-    }
+    if (!user?.id) return;
     setSessions(readReadingSessionLog(user.id));
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user?.id) {
-      setSessions([]);
-      setHydrated(true);
-      hydratedUserRef.current = null;
+    if (!authReady) {
+      setHydrated(false);
       return;
+    }
+
+    if (!user?.id) {
+      let cancelled = false;
+      setHydrated(false);
+      hydratedUserRef.current = null;
+
+      void loadDemoPreviewLibrary()
+        .then((demo) => {
+          if (!cancelled) {
+            setSessions(demo.sessions);
+            setHydrated(true);
+          }
+        })
+        .catch((err) => {
+          console.error("[ReadingSessionLog] Demo load failed:", err);
+          if (!cancelled) {
+            setSessions([]);
+            setHydrated(true);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     if (hydratedUserRef.current === user.id) {
@@ -76,7 +97,7 @@ export function ReadingSessionLogProvider({
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [authReady, user?.id]);
 
   useEffect(() => {
     const handleUpdate = () => reload();

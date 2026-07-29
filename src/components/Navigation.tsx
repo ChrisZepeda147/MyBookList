@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookMarked, Plus, User } from "lucide-react";
+import { PreviewModeBanner } from "@/components/PreviewModeBanner";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 
 const links = [
   { href: "/", label: "My List", useLogo: true as const },
@@ -14,9 +16,11 @@ const links = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { isPreviewMode } = useDemoPreview();
 
   return (
     <header className="app-navigation sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
+      {isPreviewMode && <PreviewModeBanner />}
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 pb-7 pt-8 sm:px-6">
         <Link
           href="/"

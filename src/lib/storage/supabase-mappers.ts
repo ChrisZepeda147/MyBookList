@@ -16,6 +16,7 @@ export interface ProfileRow {
   monthly_reading_goal: number;
   streak_shields?: number;
   last_shield_milestone?: number;
+  shielded_dates?: string[] | null;
   last_shielded_date?: string | null;
   shield_activated_on?: string | null;
   shield_offer_dismissed_for?: string | null;
@@ -54,6 +55,13 @@ export function profileRowToUser(row: ProfileRow | null): UserProfile {
     streakShields: row.streak_shields ?? DEFAULT_PROFILE.streakShields,
     lastShieldMilestone:
       row.last_shield_milestone ?? DEFAULT_PROFILE.lastShieldMilestone,
+    shieldedDates: Array.isArray(row.shielded_dates)
+      ? row.shielded_dates.filter(
+          (d): d is string => typeof d === "string" && d.length > 0,
+        )
+      : row.last_shielded_date
+        ? [row.last_shielded_date]
+        : [],
     lastShieldedDate: row.last_shielded_date ?? null,
     shieldActivatedOn: row.shield_activated_on ?? null,
     shieldOfferDismissedFor: row.shield_offer_dismissed_for ?? null,
@@ -74,6 +82,7 @@ export function userProfileToRow(
     monthly_reading_goal: profile.monthlyReadingGoal,
     streak_shields: profile.streakShields,
     last_shield_milestone: profile.lastShieldMilestone,
+    shielded_dates: profile.shieldedDates ?? [],
     last_shielded_date: profile.lastShieldedDate,
     shield_activated_on: profile.shieldActivatedOn,
     shield_offer_dismissed_for: profile.shieldOfferDismissedFor,

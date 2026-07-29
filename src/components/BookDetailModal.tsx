@@ -24,6 +24,7 @@ import {
 } from "@/components/ReadingSessionView";
 import { UntimedReadingSessionPrompt } from "@/components/UntimedReadingSessionPrompt";
 import { useAuth } from "@/providers/AuthProvider";
+import { useDemoPreview } from "@/providers/DemoPreviewProvider";
 import { resolveReadingStartPage } from "@/lib/reading-session-timer";
 import {
   appendReadingSessionLog,
@@ -46,6 +47,7 @@ function fromDateInputValue(dateStr: string): string {
 
 export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
   const { user } = useAuth();
+  const { isPreviewMode, requireAccount } = useDemoPreview();
   const {
     setBookStatus,
     setBookRating,
@@ -327,7 +329,13 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
           <>
             <button
               type="button"
-              onClick={() => setShowReadingSession(true)}
+              onClick={() => {
+                if (isPreviewMode) {
+                  requireAccount("signup");
+                  return;
+                }
+                setShowReadingSession(true);
+              }}
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/25 transition-colors hover:bg-emerald-700"
             >
               <Timer className="h-4 w-4" />
@@ -335,7 +343,13 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
             </button>
             <button
               type="button"
-              onClick={() => setShowUntimedSession(true)}
+              onClick={() => {
+                if (isPreviewMode) {
+                  requireAccount("signup");
+                  return;
+                }
+                setShowUntimedSession(true);
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
             >
               <PenLine className="h-4 w-4" />

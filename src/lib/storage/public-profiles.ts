@@ -23,6 +23,7 @@ export interface PublicProfileSummary {
   monthlyReadingGoal: number;
   streakShields: number;
   lastShieldMilestone: number;
+  shieldedDates: string[];
   lastShieldedDate: string | null;
   shieldActivatedOn: string | null;
   shieldOfferDismissedFor: string | null;
@@ -38,6 +39,7 @@ interface PublicProfileRow {
   monthly_reading_goal: number | null;
   streak_shields: number | null;
   last_shield_milestone: number | null;
+  shielded_dates: string[] | null;
   last_shielded_date: string | null;
   shield_activated_on: string | null;
   shield_offer_dismissed_for: string | null;
@@ -56,6 +58,13 @@ function rowToPublicProfile(row: PublicProfileRow): PublicProfileSummary {
     streakShields: row.streak_shields ?? DEFAULT_PROFILE.streakShields,
     lastShieldMilestone:
       row.last_shield_milestone ?? DEFAULT_PROFILE.lastShieldMilestone,
+    shieldedDates: Array.isArray(row.shielded_dates)
+      ? row.shielded_dates.filter(
+          (d): d is string => typeof d === "string" && d.length > 0,
+        )
+      : row.last_shielded_date
+        ? [row.last_shielded_date]
+        : [],
     lastShieldedDate: row.last_shielded_date ?? null,
     shieldActivatedOn: row.shield_activated_on ?? null,
     shieldOfferDismissedFor: row.shield_offer_dismissed_for ?? null,
@@ -68,6 +77,7 @@ export function publicProfileStreakConfig(
   return {
     streakShields: profile.streakShields,
     lastShieldMilestone: profile.lastShieldMilestone,
+    shieldedDates: profile.shieldedDates,
     lastShieldedDate: profile.lastShieldedDate,
     shieldActivatedOn: profile.shieldActivatedOn,
     shieldOfferDismissedFor: profile.shieldOfferDismissedFor,
@@ -105,7 +115,7 @@ export async function fetchBrowsableProfiles(
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, username, email, avatar_url, bio, reading_goal, monthly_reading_goal, streak_shields, last_shield_milestone, last_shielded_date, shield_activated_on, shield_offer_dismissed_for",
+      "id, username, email, avatar_url, bio, reading_goal, monthly_reading_goal, streak_shields, last_shield_milestone, shielded_dates, last_shielded_date, shield_activated_on, shield_offer_dismissed_for",
     )
     .neq("id", currentUserId)
     .order("username", { ascending: true });
