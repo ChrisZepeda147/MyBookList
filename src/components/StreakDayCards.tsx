@@ -34,15 +34,14 @@ export function StreakDayCards({ streak }: StreakDayCardsProps) {
   function rankLabelClassFor(styleId: string, kind: string): string {
     switch (styleId) {
       case "aurora":
+      case "cosmic":
+      case "solar":
+      case "nebula":
+        // Same rainbow name treatment from Aurora upward.
         return "streak-rank-label-aurora";
       case "ember":
         return "streak-rank-label-ember";
-      case "solar":
-        return "streak-rank-label-solar";
-      case "nebula":
-        return "streak-rank-label-nebula";
       case "prism":
-      case "cosmic":
         return "streak-rank-label-premium";
       default:
         return kind === "solid" ? "" : "streak-rank-label-premium";
