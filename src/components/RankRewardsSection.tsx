@@ -109,8 +109,9 @@ export function RankRewardsSection({ inModal = false }: RankRewardsSectionProps)
               }`}
             >
               Earn 1 shield every {STREAK_SHIELD_MILESTONE_INTERVAL} consecutive
-              reading days (5, 10, 15…). When you miss a day, you&apos;ll be
-              prompted to spend a shield and keep your streak alive.
+              reading days (5, 10, 15…), and 1 shield each time you finish a
+              book. When you miss a day, you&apos;ll be prompted to spend a
+              shield and keep your streak alive.
             </p>
             {shieldOffer.available && (
               <p className="mt-2 text-xs font-semibold text-sky-300 sm:text-sm">

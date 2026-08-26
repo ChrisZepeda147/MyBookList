@@ -61,6 +61,8 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
   const booksRef = useRef(books);
   booksRef.current = books;
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
   const userIdRef = useRef(user?.id);
   userIdRef.current = user?.id;
 
@@ -177,6 +179,12 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     [profile],
   );
 
+  const awardShieldForBookCompletion = useCallback(() => {
+    if (!userIdRef.current) return;
+    const nextShields = profileRef.current.streakShields + 1;
+    void updateProfile({ streakShields: nextShields });
+  }, [updateProfile]);
+
   const addBook = useCallback(
     (book: Omit<BookEntry, "id" | "addedAt">) => {
       if (!userIdRef.current) {
@@ -207,8 +215,11 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         scheduleRecommendationsRefresh([optimistic, ...booksRef.current]);
       }
 
-      if (book.status === "completed" && typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("book-completed"));
+      if (book.status === "completed") {
+        awardShieldForBookCompletion();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("book-completed"));
+        }
       }
 
       void (async () => {
@@ -240,7 +251,7 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     },
-    [applyBookMetadataUpdate, requireAccount],
+    [applyBookMetadataUpdate, awardShieldForBookCompletion, requireAccount],
   );
 
   const updateBook = useCallback(
@@ -302,11 +313,14 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
         dateCompleted,
         ...(status !== "completed" ? { rating: null } : {}),
       });
-      if (status === "completed" && !wasCompleted && typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("book-completed"));
+      if (status === "completed" && !wasCompleted) {
+        awardShieldForBookCompletion();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("book-completed"));
+        }
       }
     },
-    [updateBook],
+    [awardShieldForBookCompletion, updateBook],
   );
 
   const setBookRating = useCallback(
