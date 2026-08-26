@@ -1,77 +1,69 @@
-# MyBookList
+# 📚 MyBookList
 
-A clean, responsive book-tracking web app. Built with Next.js, Tailwind CSS, and **Supabase** for authentication and cloud storage.
+> A clean, full-stack book-tracking application built with **Next.js 16**, **React 19**, **Tailwind CSS 4**, and **Supabase**. Features Google Books API integration, granular reading analytics, and per-user data isolation via Row Level Security (RLS).
 
-## Features
+## 👤 Developer & Architecture
 
-- **Email auth** — Sign up, log in, and sign out with per-user data isolation
-- **Book Search** — Google Books API integration with autocomplete suggestions
-- **Manual Entry** — Add books by title, author, and cover URL when search fails
-- **Reading Statuses** — Reading, Completed, On Hold, DNF, Plan to Read
-- **Decimal Ratings** — 0.0 to 5.0 scale with one decimal place
-- **Sort by Score** — Toggle to sort your list highest to lowest
-- **Profile** — Username, avatar, bio, and yearly/monthly reading goals (saved to Supabase)
-- **Metrics Dashboard** — Total read, average rating, goal progress
-- **Completion History** — Timeline of when books were finished
-- **Personalized recommendations** — Daily picks on the Add page
+* **Author:** **Chris Zepeda** ([@ChrisZepeda147](https://github.com/ChrisZepeda147))
+* **Project Type:** Solo Hero Application
 
-## Tech Stack
+-## 🛠️ Tech Stack
 
-- Next.js 16 (App Router)
-- React 19
-- Tailwind CSS 4
-- Supabase Auth + Postgres (RLS)
+| Layer | Technology |
+| :--- | :--- |
+| **Framework & UI** | Next.js 16 (App Router), React 19, Tailwind CSS 4 |
+| **Database & Auth** | Supabase PostgreSQL, Row Level Security (RLS), Supabase Auth |
+| **Integrations** | Google Books API |
+| **State & Security** | Next.js Middleware, React Context Providers |
 
-## Getting Started
+---
 
-### 1. Supabase setup (required)
+## ✨ Key Features
 
-1. Create a project at [supabase.com](https://supabase.com)
-2. Open **SQL Editor** and run the contents of `supabase/schema.sql`
-3. Copy `.env.local.example` → `.env.local` and add:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   (from **Project Settings → API**)
+* **🔐 Secure Auth & Data Isolation:** Email authentication with strict PostgreSQL Row Level Security (RLS) ensuring complete tenant isolation.
+* **🔍 Google Books API Integration:** Fast book search with autocomplete suggestions and automatic metadata backfilling.
+* **📝 Manual Metadata Fallback:** Capability to add custom books by title, author, and cover URL when titles aren't in public databases.
+* **📊 Analytics & Goal Dashboard:** Tracks total books read, average ratings, goal progress, and finished completion timelines.
+* **⭐ Decimal Ratings & Sorting:** 0.0 to 5.0 rating scale with one-decimal precision and instant score-based sorting.
+* **🎯 Status Tracking:** Categorize titles across *Reading, Completed, On Hold, DNF,* and *Plan to Read*.
+* **🤖 Personal Recommendations:** Daily algorithmic recommendations on the discovery feed.
 
-### 2. Run the app
+---
 
-```bash
-npm install
-npm run dev
-```
+## 🔒 Security & Data Integrity
 
-Open [http://localhost:3000](http://localhost:3000). You’ll be redirected to **Log In** until you authenticate.
+* **Row Level Security (RLS):** Enabled on all core tables (`profiles`, `user_books`).
+* **Strict Policy Rules:** Each user can strictly only read, write, or modify rows matching their authenticated `user_id`.
+* **Server-Side Session Guards:** Auth tokens and session cookies are refreshed seamlessly via Next.js middleware.
 
-### Google Books Search (optional)
+---
 
-Add a free API key to `.env.local` for reliable search and metadata backfill:
+## 📂 Project Structure
 
-```
-GOOGLE_BOOKS_API_KEY=your_key_here
-```
+mybooklist/
+├── src/
+│   ├── app/
+│   │   ├── login/            # Authentication UI & login flows
+│   │   ├── api/books/        # Google Books proxy endpoint
+│   │   ├── add/              # Book discovery & manual entry
+│   │   └── profile/          # User metrics & reading goals
+│   ├── components/           # Reusable UI component library
+│   ├── lib/
+│   │   ├── storage/          # Supabase DB layer & mappers
+│   │   └── supabase/         # Browser/Server clients & middleware
+│   └── providers/            # React Context (Auth + State management)
+└── supabase/
+├── migrations/           # Versioned schema migrations
+└── schema.sql            # SQL definitions & RLS policy setup
 
-Restart `npm run dev` after changing env variables.
+## ⚙️ Local Development Setup
 
-## Project Structure
+### 1. Supabase & Environment Setup
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run the SQL statements inside `supabase/schema.sql` in your Supabase SQL Editor.
+3. Create a `.env.local` file in the root directory:
 
-```
-src/
-├── app/
-│   ├── login/            # Auth UI
-│   ├── api/books/        # Google Books proxy
-│   ├── add/
-│   └── profile/
-├── components/
-├── lib/storage/          # Supabase DB layer + mappers
-├── lib/supabase/         # Browser/server clients + middleware
-└── providers/            # Auth + book state
-supabase/
-├── migrations/           # Versioned schema
-└── schema.sql            # One-shot SQL for SQL editor
-```
-
-## Security
-
-- Row Level Security (RLS) on `profiles` and `user_books`
-- Each user can only read/write their own `user_id` rows
-- Session cookies refreshed via Next.js middleware
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GOOGLE_BOOKS_API_KEY=your_google_books_api_key
