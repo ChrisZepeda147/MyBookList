@@ -22,16 +22,17 @@ export interface DemoPreviewPayload {
   ownerLabel: string;
 }
 
-const CACHE_KEY = "mybooklist_demo_preview_v2";
-const CACHE_TTL_MS = 5 * 60_000;
+const CACHE_KEY = "mybooklist_demo_preview_v3";
+/** Keep guest preview off the DB for a full day per browser. */
+const CACHE_TTL_MS = 24 * 60 * 60_000;
 
 let memoryCache: { payload: DemoPreviewPayload; savedAt: number } | null = null;
 let inflight: Promise<DemoPreviewPayload> | null = null;
 
-function readSessionCache(): DemoPreviewPayload | null {
+function readPersistentCache(): DemoPreviewPayload | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as {
       payload: DemoPreviewPayload;
@@ -46,11 +47,11 @@ function readSessionCache(): DemoPreviewPayload | null {
   }
 }
 
-function writeSessionCache(payload: DemoPreviewPayload) {
+function writePersistentCache(payload: DemoPreviewPayload) {
   memoryCache = { payload, savedAt: Date.now() };
   if (typeof window === "undefined") return;
   try {
-    sessionStorage.setItem(
+    localStorage.setItem(
       CACHE_KEY,
       JSON.stringify({ payload, savedAt: Date.now() }),
     );
@@ -65,10 +66,16 @@ async function fetchDemoLibrary(): Promise<DemoPreviewPayload> {
     throw new Error("Supabase is not configured.");
   }
 
+  // Sessions: only what streak/calendar need (~3 months), not the full history.
+  const since = new Date();
+  since.setMonth(since.getMonth() - 3);
+
   const [profile, books, sessions] = await Promise.all([
     fetchProfile(supabase, DEMO_PREVIEW_USER_ID),
     fetchBooks(supabase, DEMO_PREVIEW_USER_ID, { readOnly: true }),
-    fetchReadingSessions(supabase, DEMO_PREVIEW_USER_ID),
+    fetchReadingSessions(supabase, DEMO_PREVIEW_USER_ID, {
+      sinceIso: since.toISOString(),
+    }),
   ]);
 
   return {
@@ -81,24 +88,24 @@ async function fetchDemoLibrary(): Promise<DemoPreviewPayload> {
 
 /**
  * Load the demo account the same way a signed-in user loads their library.
- * Dedupes concurrent callers and reuses a short session cache.
+ * Dedupes concurrent callers and reuses a long browser cache to protect Disk IO.
  */
 export function loadDemoPreviewLibrary(): Promise<DemoPreviewPayload> {
   if (memoryCache && Date.now() - memoryCache.savedAt < CACHE_TTL_MS) {
     return Promise.resolve(memoryCache.payload);
   }
 
-  const sessionCached = readSessionCache();
-  if (sessionCached) {
-    memoryCache = { payload: sessionCached, savedAt: Date.now() };
-    return Promise.resolve(sessionCached);
+  const cached = readPersistentCache();
+  if (cached) {
+    memoryCache = { payload: cached, savedAt: Date.now() };
+    return Promise.resolve(cached);
   }
 
   if (inflight) return inflight;
 
   inflight = fetchDemoLibrary()
     .then((payload) => {
-      writeSessionCache(payload);
+      writePersistentCache(payload);
       return payload;
     })
     .finally(() => {

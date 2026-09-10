@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getServerNow } from "@/lib/storage/server-time";
 import { createClient } from "@/lib/supabase/client";
 
-const REFRESH_MS = 5 * 60_000;
+const REFRESH_MS = 30 * 60_000;
 
 /**
  * Authoritative "now" for streak evaluation — prefers Supabase server time

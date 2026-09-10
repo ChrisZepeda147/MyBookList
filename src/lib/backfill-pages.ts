@@ -11,10 +11,10 @@ import {
 import { isPlausiblePageCount } from "@/lib/page-count";
 import { isGoogleBooksCircuitOpen } from "@/lib/google-books-circuit";
 
-const BACKFILL_DELAY_MS = 400;
+const BACKFILL_DELAY_MS = 800;
 const BACKFILL_DEBOUNCE_MS = 60_000;
 const BACKFILL_RETRY_MS = 24 * 60 * 60 * 1000;
-const BACKFILL_MAX_BOOKS_PER_RUN = 12;
+const BACKFILL_MAX_BOOKS_PER_RUN = 4;
 const BACKFILL_SESSION_STORAGE_KEY = "book_metadata_backfill_v1";
 const BACKFILL_ATTEMPTS_STORAGE_KEY = "book_metadata_backfill_attempts_v1";
 
@@ -360,7 +360,7 @@ export function scheduleLibraryMetadataBackfill(
     void runLibraryMetadataBackfill(books, onUpdate).finally(() => {
       backfillInFlight = false;
     });
-  }, 1_500);
+  }, BACKFILL_DEBOUNCE_MS);
 }
 
 /** @deprecated Use scheduleLibraryMetadataBackfill */
