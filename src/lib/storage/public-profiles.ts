@@ -131,7 +131,9 @@ export async function fetchUserBooksForBrowse(
 ): Promise<BookEntry[]> {
   const { data, error } = await supabase
     .from("user_books")
-    .select("*")
+    .select(
+      "id,user_id,title,author,cover_url,description,page_count,page_count_locked,current_page,api_categories,categories,status,rating,date_completed,added_at,google_books_id",
+    )
     .eq("user_id", userId)
     .order("added_at", { ascending: false });
 
@@ -144,10 +146,16 @@ export async function fetchUserReadingSessionsForBrowse(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ReadingSessionLogEntry[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 400);
+
   const { data, error } = await supabase
     .from("reading_sessions")
-    .select("*")
+    .select(
+      "id,user_id,book_id,book_title,book_author,start_page,end_page,pages_read,seconds_read,minutes_read,pages_per_hour,session_date,created_at",
+    )
     .eq("user_id", userId)
+    .gte("session_date", since.toISOString())
     .order("session_date", { ascending: false });
 
   if (error) throw error;

@@ -20,6 +20,16 @@ import {
   type ReadingSessionRow,
 } from "@/lib/storage/supabase-mappers";
 
+/** Explicit columns — avoid shelf_layout and other heavy extras on boot. */
+const PROFILE_SELECT =
+  "id,username,avatar_url,bio,reading_goal,monthly_reading_goal,streak_shields,last_shield_milestone,shielded_dates,last_shielded_date,shield_activated_on,shield_offer_dismissed_for,streak_style_id,updated_at";
+
+const BOOK_SELECT =
+  "id,user_id,title,author,cover_url,description,page_count,page_count_locked,current_page,api_categories,categories,status,rating,date_completed,added_at,google_books_id";
+
+const SESSION_SELECT =
+  "id,user_id,book_id,book_title,book_author,start_page,end_page,pages_read,seconds_read,minutes_read,pages_per_hour,session_date,created_at";
+
 export async function fetchServerNow(supabase: SupabaseClient): Promise<Date> {
   const { data, error } = await supabase.rpc("server_now");
   if (error) throw error;
@@ -32,7 +42,7 @@ export async function fetchProfile(
 ): Promise<UserProfile> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILE_SELECT)
     .eq("id", userId)
     .maybeSingle();
 
@@ -42,7 +52,7 @@ export async function fetchProfile(
     const { data: created, error: insertError } = await supabase
       .from("profiles")
       .insert(insert)
-      .select("*")
+      .select(PROFILE_SELECT)
       .single();
     if (insertError) throw insertError;
     return profileRowToUser(created as ProfileRow);
@@ -64,7 +74,7 @@ export async function saveProfile(
   const { data, error } = await supabase
     .from("profiles")
     .upsert(row)
-    .select("*")
+    .select(PROFILE_SELECT)
     .single();
 
   if (error) throw error;
@@ -78,7 +88,7 @@ export async function fetchBooks(
 ): Promise<BookEntry[]> {
   const { data, error } = await supabase
     .from("user_books")
-    .select("*")
+    .select(BOOK_SELECT)
     .eq("user_id", userId)
     .order("added_at", { ascending: false });
 
@@ -164,7 +174,7 @@ export async function insertBook(
   const { data, error } = await supabase
     .from("user_books")
     .insert(payload)
-    .select("*")
+    .select(BOOK_SELECT)
     .single();
 
   if (error) throw error;
@@ -206,7 +216,7 @@ export async function patchBook(
     .update(rowUpdates)
     .eq("id", bookId)
     .eq("user_id", userId)
-    .select("*")
+    .select(BOOK_SELECT)
     .single();
 
   if (error) throw error;
@@ -233,7 +243,7 @@ export async function fetchReadingSessions(
 ): Promise<ReadingSessionLogEntry[]> {
   let query = supabase
     .from("reading_sessions")
-    .select("*")
+    .select(SESSION_SELECT)
     .eq("user_id", userId)
     .order("session_date", { ascending: false });
 
@@ -274,7 +284,7 @@ export async function updateReadingSession(
     })
     .eq("id", entry.id)
     .eq("user_id", userId)
-    .select("*")
+    .select(SESSION_SELECT)
     .single();
 
   if (error) throw error;

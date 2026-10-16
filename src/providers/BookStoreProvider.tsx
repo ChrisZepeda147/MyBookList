@@ -199,6 +199,18 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, authReady, applyBookMetadataUpdate]);
 
+  // Keep signed-in library cache fresh so the next visit paints instantly.
+  useEffect(() => {
+    if (!user?.id || !loaded) return;
+    const handle = window.setTimeout(() => {
+      writeLibraryCache(user.id, {
+        profile: profileRef.current,
+        books: booksRef.current,
+      });
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [user?.id, loaded, profile, books]);
+
   const updateProfile = useCallback(
     async (updates: Partial<UserProfile>): Promise<void> => {
       // Preview is read-only — never mutate demo profile (including silent streak sync).

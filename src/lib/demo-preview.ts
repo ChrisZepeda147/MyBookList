@@ -3,12 +3,6 @@ import type {
   ReadingSessionLogEntry,
   UserProfile,
 } from "@/lib/types";
-import { createClient } from "@/lib/supabase/client";
-import {
-  fetchBooks,
-  fetchProfile,
-  fetchReadingSessions,
-} from "@/lib/storage/supabase-db";
 
 /** Guest preview mirrors this account — same data path as being signed in. */
 export const DEMO_PREVIEW_EMAIL = "chriszepeda147@gmail.com";
@@ -22,8 +16,8 @@ export interface DemoPreviewPayload {
   ownerLabel: string;
 }
 
-const CACHE_KEY = "mybooklist_demo_preview_v3";
-/** Keep guest preview off the DB for a full day per browser. */
+const CACHE_KEY = "mybooklist_demo_preview_v4";
+/** Keep guest preview off the network for a full day per browser. */
 const CACHE_TTL_MS = 24 * 60 * 60_000;
 
 let memoryCache: { payload: DemoPreviewPayload; savedAt: number } | null = null;
@@ -60,30 +54,34 @@ function writePersistentCache(payload: DemoPreviewPayload) {
   }
 }
 
+function isDemoPreviewPayload(value: unknown): value is DemoPreviewPayload {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    Array.isArray(v.books) &&
+    Array.isArray(v.sessions) &&
+    typeof v.profile === "object" &&
+    v.profile !== null
+  );
+}
+
+/** Fetch via Vercel-cached API — avoids browser → Supabase on every visit. */
 async function fetchDemoLibrary(): Promise<DemoPreviewPayload> {
-  const supabase = createClient();
-  if (!supabase) {
-    throw new Error("Supabase is not configured.");
+  const res = await fetch("/api/demo-preview", {
+    // Match <link rel="preload" crossOrigin="anonymous"> so the preload is reused.
+    credentials: "omit",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Demo preview API failed (${res.status}).`);
   }
 
-  // Sessions: only what streak/calendar need (~3 months), not the full history.
-  const since = new Date();
-  since.setMonth(since.getMonth() - 3);
-
-  const [profile, books, sessions] = await Promise.all([
-    fetchProfile(supabase, DEMO_PREVIEW_USER_ID),
-    fetchBooks(supabase, DEMO_PREVIEW_USER_ID, { readOnly: true }),
-    fetchReadingSessions(supabase, DEMO_PREVIEW_USER_ID, {
-      sinceIso: since.toISOString(),
-    }),
-  ]);
-
-  return {
-    profile,
-    books,
-    sessions,
-    ownerLabel: profile.username?.trim() || "Chris",
-  };
+  const data: unknown = await res.json();
+  if (!isDemoPreviewPayload(data)) {
+    throw new Error("Demo preview API returned an unexpected payload.");
+  }
+  return data;
 }
 
 /** Sync peek for instant first paint — no network. */
@@ -100,9 +98,9 @@ export function peekDemoPreviewCache(): DemoPreviewPayload | null {
 }
 
 /**
- * Load the demo account the same way a signed-in user loads their library.
- * Dedupes concurrent callers and reuses a long browser cache to protect Disk IO.
- * Pass `{ refresh: true }` to always hit the network (callers should peek cache first).
+ * Load the demo account for guest preview.
+ * Dedupes concurrent callers; prefers localStorage, then CDN-cached API.
+ * Pass `{ refresh: true }` to revalidate from the API (still CDN-friendly).
  */
 export function loadDemoPreviewLibrary(options?: {
   refresh?: boolean;

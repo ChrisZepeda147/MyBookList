@@ -42,6 +42,15 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${quicksand.variable} h-full antialiased`}
     >
+      <head>
+        {/* Start demo payload early — guests paint from this CDN-cached JSON. */}
+        <link
+          rel="preload"
+          href="/api/demo-preview"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
         <AppProviders>{children}</AppProviders>
       </body>

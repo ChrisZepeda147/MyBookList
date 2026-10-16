@@ -154,10 +154,12 @@ async function syncUpdateToRemote(
   }
 }
 
+/** Enough history for long streaks without pulling the entire table on boot. */
+const HYDRATE_LOOKBACK_DAYS = 400;
+
 /**
- * Load sessions from Supabase, upload any browser-only entries, and refresh cache.
- * Books/profile already live in Supabase — reading sessions must too or they vanish
- * when localStorage is cleared or the browser changes.
+ * Load recent sessions from Supabase and refresh the local cache.
+ * Uploads browser-only entries in the background so boot is not blocked on writes.
  */
 export async function hydrateReadingSessionLog(
   userId: string,
@@ -172,16 +174,28 @@ export async function hydrateReadingSessionLog(
   }
 
   try {
-    const remote = await fetchReadingSessions(supabase, userId);
+    const since = new Date();
+    since.setDate(since.getDate() - HYDRATE_LOOKBACK_DAYS);
+
+    const remote = await fetchReadingSessions(supabase, userId, {
+      sinceIso: since.toISOString(),
+    });
     const remoteIds = new Set(remote.map((entry) => entry.id));
     const localOnly = local.filter((entry) => !remoteIds.has(entry.id));
 
-    if (localOnly.length > 0) {
-      await upsertReadingSessions(supabase, userId, localOnly);
-    }
-
     const merged = sortSessionsNewestFirst([...remote, ...localOnly]);
     persistLocal(userId, merged);
+
+    // Defer upserts — Disk IO writes must not block first paint / streak hydrate.
+    if (localOnly.length > 0) {
+      void upsertReadingSessions(supabase, userId, localOnly).catch((err) => {
+        console.error(
+          "[reading-session-log] Background session sync failed:",
+          err,
+        );
+      });
+    }
+
     return merged;
   } catch (err) {
     console.error("[reading-session-log] Failed to hydrate from Supabase:", err);
