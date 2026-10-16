@@ -50,9 +50,31 @@ async function fetchDemoProfile(
   return profileRowToUser(data as ProfileRow);
 }
 
+const FETCH_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error("Demo preview timed out talking to Supabase.")),
+      ms,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 /**
  * Load demo library on the server. Prefer in-process cache, then Supabase.
  * Used by /api/demo-preview so Vercel can CDN-cache the JSON response.
+ * Falls back to stale in-process cache if Supabase is paused/slow.
  */
 export async function loadDemoPreviewPayload(): Promise<DemoPreviewPayload> {
   if (
@@ -62,25 +84,39 @@ export async function loadDemoPreviewPayload(): Promise<DemoPreviewPayload> {
     return serverCache.payload;
   }
 
-  const supabase = createAnonClient();
-  const since = new Date();
-  since.setMonth(since.getMonth() - 3);
+  try {
+    const supabase = createAnonClient();
+    const since = new Date();
+    since.setMonth(since.getMonth() - 3);
 
-  const [profile, books, sessions] = await Promise.all([
-    fetchDemoProfile(supabase),
-    fetchBooks(supabase, DEMO_PREVIEW_USER_ID, { readOnly: true }),
-    fetchReadingSessions(supabase, DEMO_PREVIEW_USER_ID, {
-      sinceIso: since.toISOString(),
-    }),
-  ]);
+    const [profile, books, sessions] = await withTimeout(
+      Promise.all([
+        fetchDemoProfile(supabase),
+        fetchBooks(supabase, DEMO_PREVIEW_USER_ID, { readOnly: true }),
+        fetchReadingSessions(supabase, DEMO_PREVIEW_USER_ID, {
+          sinceIso: since.toISOString(),
+        }),
+      ]),
+      FETCH_TIMEOUT_MS,
+    );
 
-  const payload: DemoPreviewPayload = {
-    profile,
-    books,
-    sessions,
-    ownerLabel: profile.username?.trim() || "Chris",
-  };
+    const payload: DemoPreviewPayload = {
+      profile,
+      books,
+      sessions,
+      ownerLabel: profile.username?.trim() || "Chris",
+    };
 
-  serverCache = { payload, savedAt: Date.now() };
-  return payload;
+    serverCache = { payload, savedAt: Date.now() };
+    return payload;
+  } catch (err) {
+    if (serverCache) {
+      console.warn(
+        "[demo-preview] Using stale cache after Supabase failure:",
+        err,
+      );
+      return serverCache.payload;
+    }
+    throw err;
+  }
 }

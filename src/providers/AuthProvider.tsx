@@ -16,6 +16,8 @@ import {
   isEmailAlreadyRegistered,
   mapAuthErrorMessage,
   normalizeAuthEmail,
+  SUPABASE_UNREACHABLE_MESSAGE,
+  isNetworkAuthFailure,
 } from "@/lib/auth-utils";
 
 interface AuthContextValue {
@@ -85,22 +87,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: "Supabase is not configured. Add env variables." };
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizeAuthEmail(email),
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizeAuthEmail(email),
+        password,
+      });
 
-    if (error) {
-      return { error: mapAuthErrorMessage(error) };
-    }
+      if (error) {
+        return { error: mapAuthErrorMessage(error) };
+      }
 
-    if (!data.session) {
+      if (!data.session) {
+        return {
+          error:
+            "Sign-in succeeded but no session was created. Please try again.",
+        };
+      }
+
+      return { error: null };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch";
       return {
-        error: "Sign-in succeeded but no session was created. Please try again.",
+        error: isNetworkAuthFailure(message)
+          ? SUPABASE_UNREACHABLE_MESSAGE
+          : message,
       };
     }
-
-    return { error: null };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
@@ -115,33 +127,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const normalizedEmail = normalizeAuthEmail(email);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: {
-        emailRedirectTo: getAuthCallbackUrl(),
-        data: {
-          username: normalizedEmail.split("@")[0] || "Bookworm",
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          emailRedirectTo: getAuthCallbackUrl(),
+          data: {
+            username: normalizedEmail.split("@")[0] || "Bookworm",
+          },
         },
-      },
-    });
+      });
 
-    if (isEmailAlreadyRegistered(error, data.user)) {
+      if (isEmailAlreadyRegistered(error, data.user)) {
+        return {
+          error: EMAIL_ALREADY_REGISTERED_MESSAGE,
+          needsEmailConfirm: false,
+          emailAlreadyRegistered: true,
+        };
+      }
+
+      const needsEmailConfirm =
+        !error && data.user !== null && data.session === null;
+
       return {
-        error: EMAIL_ALREADY_REGISTERED_MESSAGE,
+        error: mapAuthErrorMessage(error),
+        needsEmailConfirm,
+        emailAlreadyRegistered: false,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch";
+      return {
+        error: isNetworkAuthFailure(message)
+          ? SUPABASE_UNREACHABLE_MESSAGE
+          : message,
         needsEmailConfirm: false,
-        emailAlreadyRegistered: true,
+        emailAlreadyRegistered: false,
       };
     }
-
-    const needsEmailConfirm =
-      !error && data.user !== null && data.session === null;
-
-    return {
-      error: mapAuthErrorMessage(error),
-      needsEmailConfirm,
-      emailAlreadyRegistered: false,
-    };
   }, []);
 
   const signOut = useCallback(async () => {

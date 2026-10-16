@@ -30,6 +30,19 @@ export function isEmailAlreadyRegistered(
   return false;
 }
 
+export const SUPABASE_UNREACHABLE_MESSAGE =
+  "Could not reach the database. If this keeps happening, the Supabase project may be paused — restore it in the Supabase dashboard, then try again.";
+
+export function isNetworkAuthFailure(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("load failed") ||
+    lower.includes("network request failed")
+  );
+}
+
 export function mapAuthErrorMessage(error: AuthError | null): string | null {
   if (!error) return null;
   if (isEmailAlreadyRegistered(error, null)) {
@@ -39,6 +52,11 @@ export function mapAuthErrorMessage(error: AuthError | null): string | null {
   const message = error.message.toLowerCase();
   if (message.includes("email not confirmed")) {
     return "Please confirm your email before logging in. Check your inbox for the confirmation link.";
+  }
+
+  // Browser TypeError when Supabase is paused, offline, or blocked.
+  if (isNetworkAuthFailure(error.message)) {
+    return SUPABASE_UNREACHABLE_MESSAGE;
   }
 
   return error.message;
