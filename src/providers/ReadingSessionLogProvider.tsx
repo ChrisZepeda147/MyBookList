@@ -13,7 +13,10 @@ import {
   hydrateReadingSessionLog,
   readReadingSessionLog,
 } from "@/lib/reading-session-log";
-import { loadDemoPreviewLibrary } from "@/lib/demo-preview";
+import {
+  loadDemoPreviewLibrary,
+  peekDemoPreviewCache,
+} from "@/lib/demo-preview";
 import { dailyMinutesFromSessions } from "@/lib/daily-reading-stars";
 import { readingDaysFromSessions } from "@/lib/reading-streak";
 import type { ReadingSessionLogEntry } from "@/lib/types";
@@ -54,9 +57,21 @@ export function ReadingSessionLogProvider({
 
     if (!user?.id) {
       let cancelled = false;
-      setHydrated(false);
       hydratedUserRef.current = null;
 
+      const cached = peekDemoPreviewCache();
+      if (cached) {
+        setSessions(cached.sessions);
+        setHydrated(true);
+        void loadDemoPreviewLibrary({ refresh: true }).then((demo) => {
+          if (!cancelled) setSessions(demo.sessions);
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      setHydrated(false);
       void loadDemoPreviewLibrary()
         .then((demo) => {
           if (!cancelled) {
@@ -81,6 +96,7 @@ export function ReadingSessionLogProvider({
       return;
     }
 
+    // Local cache first — UI can render streak immediately.
     const cached = readReadingSessionLog(user.id);
     setSessions(cached);
     setHydrated(true);

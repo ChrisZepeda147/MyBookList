@@ -50,11 +50,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
 
+    // Never leave the UI stuck if getSession is slow (cold Supabase / Disk IO).
+    const readyFallback = window.setTimeout(() => {
+      if (!cancelled) setAuthReady(true);
+    }, 400);
+
     // Local session is instant; don't block the UI on a remote getUser round-trip.
     void supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       setUser(data.session?.user ?? null);
       setAuthReady(true);
+      window.clearTimeout(readyFallback);
     });
 
     const {
@@ -63,10 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       setUser(session?.user ?? null);
       setAuthReady(true);
+      window.clearTimeout(readyFallback);
     });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(readyFallback);
       subscription.unsubscribe();
     };
   }, []);

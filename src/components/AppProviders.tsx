@@ -5,28 +5,19 @@ import { AccountLoadingSpinner } from "@/components/AccountLoadingSpinner";
 import { CelebrationListener } from "@/components/CelebrationListener";
 import { Navigation } from "@/components/Navigation";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
-import { BookStoreProvider, useBookStore } from "@/providers/BookStoreProvider";
+import { BookStoreProvider } from "@/providers/BookStoreProvider";
 import {
   DemoPreviewProvider,
   useDemoPreview,
 } from "@/providers/DemoPreviewProvider";
-import {
-  ReadingSessionLogProvider,
-  useReadingSessionLog,
-} from "@/providers/ReadingSessionLogProvider";
+import { ReadingSessionLogProvider } from "@/providers/ReadingSessionLogProvider";
 import { StreakShieldPrompt } from "@/components/StreakShieldPrompt";
 import { StartReadingSessionProvider } from "@/providers/StartReadingSessionProvider";
-
-function AppBootScreen() {
-  return <AccountLoadingSpinner label="Loading your account" />;
-}
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
   const { authReady } = useAuth();
-  const { loaded } = useBookStore();
-  const { hydrated: streakLogReady } = useReadingSessionLog();
   const { isPreviewMode } = useDemoPreview();
 
   if (isLoginPage) {
@@ -37,9 +28,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Same boot gate as a normal signed-in session.
-  if (!authReady || !loaded || !streakLogReady) {
-    return <AppBootScreen />;
+  // Only wait on local auth session check — never block the whole app on Supabase data.
+  if (!authReady) {
+    return <AccountLoadingSpinner label="Loading" />;
   }
 
   return (

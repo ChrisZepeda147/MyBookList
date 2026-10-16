@@ -34,7 +34,11 @@ import {
 } from "@/lib/storage/supabase-db";
 import { useAuth } from "@/providers/AuthProvider";
 import { useDemoPreview } from "@/providers/DemoPreviewProvider";
-import { loadDemoPreviewLibrary } from "@/lib/demo-preview";
+import {
+  loadDemoPreviewLibrary,
+  peekDemoPreviewCache,
+} from "@/lib/demo-preview";
+import { peekLibraryCache, writeLibraryCache } from "@/lib/library-cache";
 
 interface BookStoreContextValue {
   profile: UserProfile;
@@ -108,27 +112,66 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     let cancelled = false;
-    setLoaded(false);
-    setBooks([]);
-    setProfile(DEFAULT_PROFILE);
+
+    if (!user) {
+      // Instant paint from cache when available; refresh in the background.
+      const cached = peekDemoPreviewCache();
+      if (cached) {
+        setProfile(cached.profile);
+        setBooks(cached.books);
+        setLoaded(true);
+        void loadDemoPreviewLibrary({ refresh: true }).then((demo) => {
+          if (cancelled) return;
+          setProfile(demo.profile);
+          setBooks(demo.books);
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      setLoaded(false);
+      setBooks([]);
+      setProfile(DEFAULT_PROFILE);
+
+      void loadDemoPreviewLibrary()
+        .then((demo) => {
+          if (cancelled) return;
+          setProfile(demo.profile);
+          setBooks(demo.books);
+        })
+        .catch((err) => {
+          console.error("[BookStore] Failed to load demo preview:", err);
+        })
+        .finally(() => {
+          if (!cancelled) setLoaded(true);
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Instant paint from last visit; refresh from Supabase in the background.
+    const cached = peekLibraryCache(user.id);
+    if (cached) {
+      setProfile(cached.profile);
+      setBooks(cached.books);
+      setLoaded(true);
+    } else {
+      setLoaded(false);
+      setBooks([]);
+      setProfile(DEFAULT_PROFILE);
+    }
 
     void (async () => {
       const supabase = createClient();
       if (!supabase) {
-        setLoaded(true);
+        if (!cancelled) setLoaded(true);
         return;
       }
 
       try {
-        if (!user) {
-          // Same load path as a signed-in account — Chris's library, read-only.
-          const demo = await loadDemoPreviewLibrary();
-          if (cancelled) return;
-          setProfile(demo.profile);
-          setBooks(demo.books);
-          return;
-        }
-
         const [nextProfile, nextBooks] = await Promise.all([
           fetchProfile(supabase, user.id),
           fetchBooks(supabase, user.id),
@@ -138,6 +181,10 @@ export function BookStoreProvider({ children }: { children: React.ReactNode }) {
 
         setProfile(nextProfile);
         setBooks(nextBooks);
+        writeLibraryCache(user.id, {
+          profile: nextProfile,
+          books: nextBooks,
+        });
 
         scheduleLibraryMetadataBackfill(nextBooks, applyBookMetadataUpdate);
       } catch (err) {

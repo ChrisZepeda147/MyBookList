@@ -86,19 +86,30 @@ async function fetchDemoLibrary(): Promise<DemoPreviewPayload> {
   };
 }
 
-/**
- * Load the demo account the same way a signed-in user loads their library.
- * Dedupes concurrent callers and reuses a long browser cache to protect Disk IO.
- */
-export function loadDemoPreviewLibrary(): Promise<DemoPreviewPayload> {
+/** Sync peek for instant first paint — no network. */
+export function peekDemoPreviewCache(): DemoPreviewPayload | null {
   if (memoryCache && Date.now() - memoryCache.savedAt < CACHE_TTL_MS) {
-    return Promise.resolve(memoryCache.payload);
+    return memoryCache.payload;
   }
-
   const cached = readPersistentCache();
   if (cached) {
     memoryCache = { payload: cached, savedAt: Date.now() };
-    return Promise.resolve(cached);
+    return cached;
+  }
+  return null;
+}
+
+/**
+ * Load the demo account the same way a signed-in user loads their library.
+ * Dedupes concurrent callers and reuses a long browser cache to protect Disk IO.
+ * Pass `{ refresh: true }` to always hit the network (callers should peek cache first).
+ */
+export function loadDemoPreviewLibrary(options?: {
+  refresh?: boolean;
+}): Promise<DemoPreviewPayload> {
+  if (!options?.refresh) {
+    const cached = peekDemoPreviewCache();
+    if (cached) return Promise.resolve(cached);
   }
 
   if (inflight) return inflight;
